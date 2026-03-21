@@ -341,4 +341,35 @@ mod tests {
             _ => panic!("Expected ChronosError::InvalidInput, got {:?}", result),
         }
     }
+
+    #[tokio::test]
+    async fn test_confidence_score_constraint() {
+        let db = Database::new_in_memory().await.unwrap();
+        let mut log = SemanticLog {
+            id: Ulid::new(),
+            timestamp: Utc::now(),
+            source_frame_id: Ulid::new(),
+            description: "Invalid score".to_string(),
+            active_application: None,
+            activity_category: None,
+            key_entities: vec![],
+            confidence_score: 1.1, // OUT OF RANGE [0.0, 1.0]
+            raw_vlm_response: "".to_string(),
+        };
+
+        // This should fail due to the CHECK constraint in the DB schema
+        let result = db.insert_semantic_log(&log).await;
+        assert!(result.is_err());
+        match result {
+            Err(chronos_core::error::ChronosError::Database(msg)) => {
+                assert!(msg.to_lowercase().contains("check constraint failed"));
+            }
+            _ => panic!("Expected ChronosError::Database, got {:?}", result),
+        }
+
+        // Test lower bound
+        log.confidence_score = -0.1;
+        let result = db.insert_semantic_log(&log).await;
+        assert!(result.is_err());
+    }
 }

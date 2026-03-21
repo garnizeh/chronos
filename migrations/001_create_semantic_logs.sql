@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS semantic_logs (
     active_application TEXT,                      -- Detected active window
     activity_category  TEXT,                      -- Classified activity type
     key_entities    TEXT NOT NULL DEFAULT '[]',   -- JSON array of strings
-    confidence_score REAL NOT NULL DEFAULT 0.0,   -- 0.0 to 1.0
+    confidence_score REAL NOT NULL DEFAULT 0.0 CHECK (confidence_score >= 0.0 AND confidence_score <= 1.0),
     raw_vlm_response TEXT NOT NULL,               -- Full VLM JSON response
     created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
