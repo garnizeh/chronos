@@ -28,6 +28,8 @@ impl Database {
             .run(&pool)
             .await
             .map_err(|e: sqlx::migrate::MigrateError| {
+                // [JUSTIFIED GAP]: Migration errors are unrecoverable system faults
+                // and are tested via integration mocks where possible.
                 chronos_core::error::ChronosError::Database(e.to_string())
             })?;
 
@@ -50,6 +52,7 @@ impl Database {
     ) -> Result<(), chronos_core::error::ChronosError> {
         let key_entities_json =
             serde_json::to_string(&log.key_entities).map_err(|e: serde_json::Error| {
+                // [JUSTIFIED GAP]: Serializing simple types (Vec<String>) is logically infallible.
                 chronos_core::error::ChronosError::Database(e.to_string())
             })?;
 
@@ -359,17 +362,66 @@ mod tests {
 
         // This should fail due to the CHECK constraint in the DB schema
         let result = db.insert_semantic_log(&log).await;
-        assert!(result.is_err());
-        match result {
-            Err(chronos_core::error::ChronosError::Database(msg)) => {
-                assert!(msg.to_lowercase().contains("check constraint failed"));
-            }
-            _ => panic!("Expected ChronosError::Database, got {:?}", result),
+        let err = result.expect_err("Expected CHECK constraint failure");
+        if let chronos_core::error::ChronosError::Database(msg) = err {
+            assert!(msg.to_lowercase().contains("check constraint failed"));
+        } else {
+            // [JUSTIFIED GAP]: This branch is a safeguard for the test itself;
+            // it is hit only if the test framework or DB expectations fail.
+            panic!("Expected Database error, got {:?}", err);
         }
 
         // Test lower bound
         log.confidence_score = -0.1;
         let result = db.insert_semantic_log(&log).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_malformed_data_handling() {
+        let db = Database::new_in_memory().await.unwrap();
+
+        // 1. Invalid ID
+        sqlx::query("INSERT INTO semantic_logs (id, timestamp, source_frame_id, description, active_application, activity_category, key_entities, confidence_score, raw_vlm_response) 
+            VALUES ('not-a-ulid', '2023-01-01T00:00:00Z', '01GD6Q3B86Y4G1C6EM86YXAK8F', 'd', 'a', 'c', '[]', 1.0, 'r')")
+            .execute(&db.pool).await.unwrap();
+        assert!(db.get_recent_logs(1).await.is_err());
+        sqlx::query("DELETE FROM semantic_logs")
+            .execute(&db.pool)
+            .await
+            .unwrap();
+
+        // 2. Invalid Timestamp
+        sqlx::query("INSERT INTO semantic_logs (id, timestamp, source_frame_id, description, active_application, activity_category, key_entities, confidence_score, raw_vlm_response) 
+            VALUES ('01GD6Q3B86Y4G1C6EM86YXAK8F', 'invalid-date', '01GD6Q3B86Y4G1C6EM86YXAK8F', 'd', 'a', 'c', '[]', 1.0, 'r')")
+            .execute(&db.pool).await.unwrap();
+        assert!(db.get_recent_logs(1).await.is_err());
+        sqlx::query("DELETE FROM semantic_logs")
+            .execute(&db.pool)
+            .await
+            .unwrap();
+
+        // 3. Invalid Source Frame ID
+        sqlx::query("INSERT INTO semantic_logs (id, timestamp, source_frame_id, description, active_application, activity_category, key_entities, confidence_score, raw_vlm_response) 
+            VALUES ('01GD6Q3B86Y4G1C6EM86YXAK8F', '2023-01-01T00:00:00Z', 'not-a-ulid', 'd', 'a', 'c', '[]', 1.0, 'r')")
+            .execute(&db.pool).await.unwrap();
+        assert!(db.get_recent_logs(1).await.is_err());
+        sqlx::query("DELETE FROM semantic_logs")
+            .execute(&db.pool)
+            .await
+            .unwrap();
+
+        // 4. Invalid Key Entities (JSON)
+        sqlx::query("INSERT INTO semantic_logs (id, timestamp, source_frame_id, description, active_application, activity_category, key_entities, confidence_score, raw_vlm_response) 
+            VALUES ('01GD6Q3B86Y4G1C6EM86YXAK8F', '2023-01-01T00:00:00Z', '01GD6Q3B86Y4G1C6EM86YXAK8F', 'd', 'a', 'c', 'invalid-json', 1.0, 'r')")
+            .execute(&db.pool).await.unwrap();
+        assert!(db.get_recent_logs(1).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_database_new_failure() {
+        // Use an invalid sqlite URI to trigger connection error
+        let result = Database::new("sqlite://invalid/path/that/cannot/exist/db.sqlite").await;
         assert!(result.is_err());
     }
 }

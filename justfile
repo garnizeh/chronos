@@ -131,6 +131,11 @@ set shell := ["bash", "-c"]
     cargo llvm-cov nextest --workspace --lcov --output-path lcov.info
     echo "Coverage report generated at lcov.info"
 
+# Generate and open HTML coverage report locally
+@coverage-html:
+    echo "Generating HTML coverage report..."
+    cargo llvm-cov nextest --workspace --html --open
+
 # Verify that the code compiles with the declared MSRV (1.94)
 @msrv:
     rustup toolchain list | grep -q "1.94" || rustup toolchain install 1.94
@@ -156,7 +161,11 @@ set shell := ["bash", "-c"]
     cargo clippy --workspace --all-targets -- -D warnings
     echo -e "\n4. Running test suite with nextest..."
     cargo nextest run --workspace
-    echo -e "\n✅ All local CI checks passed! Safe to commit."
+    echo -e "\n5. Generating test coverage summary..."
+    cargo llvm-cov nextest --workspace
+    echo -e "\n6. Final Policy Check..."
+    echo "✅ All local CI checks passed! Safe to commit."
+    echo "💡 POLICY: If coverage is below 100% logic coverage, run the agent workflow: /fix-coverage"
 
 # ==============================================================================
 # 📦 7. RELEASE & MAINTENANCE

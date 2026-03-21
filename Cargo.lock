@@ -460,8 +460,13 @@ dependencies = [
 name = "chronos-capture"
 version = "0.3.0"
 dependencies = [
+ "async-trait",
+ "chrono",
  "chronos-core",
+ "image",
  "tokio",
+ "tracing",
+ "ulid",
  "xcap",
 ]
 

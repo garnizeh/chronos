@@ -1,2 +1,2 @@
-// chronos-capture: OS-level screen capture with ring buffer.
-// Implementation comes in Step 4.
+pub mod ring_buffer;
+pub mod x11;
