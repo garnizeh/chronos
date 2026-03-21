@@ -1,11 +1,11 @@
-use async_trait::async_trait;
-use crate::models::{Frame, SemanticLog};
 use crate::error::Result;
+use crate::models::{Frame, SemanticLog};
+use async_trait::async_trait;
 
 /// The screen capture abstraction.
 ///
 /// **Go Parallel:** This is exactly like declaring a Go `type ImageCapture interface { ... }`.
-/// Any struct that implements these methods automatically fulfills this contract. 
+/// Any struct that implements these methods automatically fulfills this contract.
 ///
 /// **Why `Send + Sync`?**
 /// In Go, interfaces are implicitly safe to pass across goroutines. Rust, however, requires
@@ -28,7 +28,7 @@ pub trait ImageCapture: Send + Sync {
 /// a mock for testing, or a future cloud-based VLM. Clean architectural boundaries!
 #[async_trait]
 pub trait VisionInference: Send + Sync {
-    /// Sends a frame's image data to the Vision-Language Model and parses 
+    /// Sends a frame's image data to the Vision-Language Model and parses
     /// the response into a structured `SemanticLog`.
     ///
     /// Notice how we take a shared reference `&Frame` here. We don't need to consume (take ownership of)
@@ -49,7 +49,7 @@ pub mod mocks {
     /// to creating a struct `mockCapture{}` that implements the `ImageCapture`
     /// interface purely for unit test deterministic behavior.
     pub struct MockCapture;
-    
+
     #[async_trait]
     impl ImageCapture for MockCapture {
         async fn capture_frame(&self) -> Result<Frame> {
@@ -57,7 +57,7 @@ pub mod mocks {
                 id: Ulid::new(),
                 timestamp: Utc::now(),
                 // PNG magic bytes for a minimal valid-looking header
-                image_data: vec![0x89, 0x50, 0x4E, 0x47], 
+                image_data: vec![0x89, 0x50, 0x4E, 0x47],
                 width: 1,
                 height: 1,
             })
@@ -67,7 +67,7 @@ pub mod mocks {
     /// A test double that returns a hardcoded semantic log.
     /// Simulates a VLM that always sees "User editing code in VSCode".
     pub struct MockVision;
-    
+
     #[async_trait]
     impl VisionInference for MockVision {
         async fn analyze_frame(&self, frame: &Frame) -> Result<SemanticLog> {
@@ -84,7 +84,7 @@ pub mod mocks {
             })
         }
     }
-    
+
     // Testing the mock capture implementation itself
     #[tokio::test]
     async fn test_mock_capture_returns_frame() {
@@ -95,22 +95,22 @@ pub mod mocks {
         assert_eq!(frame.width, 1);
         assert_eq!(frame.height, 1);
     }
-    
-    // Testing the mock vision implementation 
+
+    // Testing the mock vision implementation
     #[tokio::test]
     async fn test_mock_vision_returns_semantic_log() {
         let capture = MockCapture;
         let frame = capture.capture_frame().await.unwrap();
-        
+
         let vision = MockVision;
         let log = vision.analyze_frame(&frame).await.unwrap();
-        
-        // Ensure that the log properly tracked which frame it was created from 
+
+        // Ensure that the log properly tracked which frame it was created from
         assert_eq!(log.source_frame_id, frame.id);
         assert_eq!(log.description, "User editing code in VSCode");
         assert_eq!(log.confidence_score, 0.95);
     }
-    
+
     // Verifying uniquely generated identifiers for frames
     #[tokio::test]
     async fn test_mock_capture_unique_ids() {
@@ -119,7 +119,7 @@ pub mod mocks {
         let f2 = capture.capture_frame().await.unwrap();
         assert_ne!(f1.id, f2.id); // Identifiers must not conflict
     }
-    
+
     // Proving that Rust's dynamic dispatch works smoothly for Traits
     #[tokio::test]
     async fn test_trait_object_dispatch() {
@@ -127,10 +127,10 @@ pub mod mocks {
         // This is Rust's equivalent of an interface slice in Go
         let capture: Box<dyn ImageCapture> = Box::new(MockCapture);
         let frame = capture.capture_frame().await.unwrap();
-        
+
         let vision: Box<dyn VisionInference> = Box::new(MockVision);
         let log = vision.analyze_frame(&frame).await.unwrap();
-        
+
         assert_eq!(log.source_frame_id, frame.id);
     }
 }
