@@ -10,11 +10,11 @@ This is conceptually similar to a buffered channel in Go `make(chan Frame, capac
 - [x] Create `crates/chronos-capture/src/ring_buffer.rs`.
 - [x] Define the `FrameRingBuffer` struct wrapping a `std::collections::VecDeque<Frame>` and a `usize` capacity.
 - [x] Implement `new(capacity: usize) -> Self`.
-- [x] Implement `push(&mut self, frame: Frame)`:
+- [x] Implement `push(&self, frame: Frame)`:
   - If `len() == capacity`, call `pop_front()` to drop the oldest.
   - Call `push_back(frame)`.
 - [x] Implement `len(&self) -> usize` and `is_empty(&self) -> bool`.
-- [x] Implement `latest(&self) -> Option<&Frame>` returning `back()`.
+- [x] Implement `latest(&self) -> Option<Arc<Frame>>` returning a cloned `Arc` from `back()`.
 - [x] Write `#[cfg(test)]` block in the same file:
   - [x] `test_push_within_capacity`
   - [x] `test_push_drops_oldest_when_full`
