@@ -24,7 +24,8 @@ If an uncovered block of code falls into any of the following categories, you MU
 
 When you hit a guardrail or an architectural conflict, you must halt execution and output a structured report to the user containing:
 
-- **The Problem**: Explain exactly what is uncovered and why it violates the guardrails (e.g., "Testing capture_primary requires a live X11 server").
+- **The Problem**: Explain exactly what is uncovered and why it violates the guardrails (e.g., "Testing `capture_primary` requires a live X11 server").
+- **Detailed Documentation (MANDATORY)**: Create or update a "Justified Coverage Gaps" section in the module's `walkthrough.md` or a `GAPS.md` file. Document the specific technical reason, the potential impact, and why this gap is acceptable given the architectural constraints.
 - **Option A (Refactor for Inversion of Control)**: Propose abstracting the heavy dependency behind a Rust trait so it can be mocked.
 - **Option B (Exempt from Coverage)**: Propose ignoring the function using the `#[coverage(off)]` attribute (if using nightly/specific flags) or simply accepting it as an intentional gap.
 - **Option C (Integration Test)**: Propose moving this specific check to an isolated integration test that only runs in a specific CI environment.
