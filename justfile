@@ -19,8 +19,12 @@ set shell := ["bash", "-c"]
     echo "Installing required Cargo tools..."
     # Reason: cargo-binstall downloads pre-compiled binaries instead of
     # compiling from source, turning a 10-minute setup into ~15 seconds.
-    # Go Equivalent: Using `go install` which always downloads pre-built binaries.
-    cargo install cargo-binstall
+    # We use the official bootstrap script for maximum speed, falling back
+    # to cargo install if necessary.
+    # Go Equivalent: Using pre-built binaries instead of building from source.
+    command -v cargo-binstall >/dev/null || \
+      (curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash) || \
+      cargo install cargo-binstall
     # Reason: sqlx-cli needs --no-default-features/--features flags, which
     # cargo-binstall does not support. We keep `cargo install` for this one.
     cargo install sqlx-cli --no-default-features --features rustls,sqlite
