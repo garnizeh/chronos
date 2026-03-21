@@ -482,12 +482,15 @@ dependencies = [
 name = "chronos-daemon"
 version = "0.2.0"
 dependencies = [
+ "chrono",
  "chronos-capture",
  "chronos-core",
  "chronos-inference",
  "clap",
+ "serde_json",
  "sqlx",
  "tokio",
+ "ulid",
 ]
 
 [[package]]

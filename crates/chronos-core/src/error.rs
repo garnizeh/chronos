@@ -23,6 +23,9 @@ pub enum ChronosError {
 
     #[error("Operation timed out: {0}")]
     Timeout(String),
+
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
 }
 
 /// A specialized Result type mapping `std::result::Result` to `ChronosError`.

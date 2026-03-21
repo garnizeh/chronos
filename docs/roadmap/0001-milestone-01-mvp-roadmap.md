@@ -2,7 +2,7 @@
 
 > **Source of truth:** [`docs/design/0001-chronos-personal-context-engine.md`](../design/0001-chronos-personal-context-engine.md)  
 > **Prompt spec:** [`docs/prompt/0001-milestone-01-mvp.md`](../prompt/0001-milestone-01-mvp.md)  
-> **Status:** In Progress — Step 3
+> **Status:** In Progress — Step 5
 
 ---
 
@@ -432,7 +432,9 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ---
 
-### Step 4: Database Layer
+### Step 4: Database Layer ✅
+
+> 📋 **Detailed tasks:** [`tasks-step-4-database-layer/`](tasks-step-4-database-layer/)
 
 **Goal:** Set up SQLite persistence via `sqlx`. Create the `semantic_logs` table schema, implement insert/query operations, and verify with in-memory SQLite tests. Follow the `/Local SQLite & SQLx Pipeline` workflow.
 
@@ -442,66 +444,20 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **4.1** Create `migrations/001_create_semantic_logs.sql`:
-  ```sql
-  -- UP: Create the semantic_logs table (see Design §3.D)
-  CREATE TABLE IF NOT EXISTS semantic_logs (
-      id              TEXT PRIMARY KEY NOT NULL,    -- ULID as text
-      timestamp       TEXT NOT NULL,                -- ISO 8601
-      source_frame_id TEXT NOT NULL,                -- ULID of the originating frame
-      description     TEXT NOT NULL,                -- VLM-generated description
-      active_application TEXT,                      -- Detected active window
-      activity_category  TEXT,                      -- Classified activity type
-      key_entities    TEXT NOT NULL DEFAULT '[]',   -- JSON array of strings
-      confidence_score REAL NOT NULL DEFAULT 0.0,   -- 0.0 to 1.0
-      raw_vlm_response TEXT NOT NULL,               -- Full VLM JSON response
-      created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-  );
+- [x] **4.1** Create `migrations/001_create_semantic_logs.sql` ✅
+- [x] **4.2** Create `crates/chronos-daemon/src/database.rs` ✅
+- [x] **4.3** Write tests (`#[cfg(test)]` in `database.rs`) ✅
+- [x] **4.4** Run: `cargo test -p chronos-daemon` ✅
+- [x] **4.5** Run: `cargo clippy -p chronos-daemon -- -D warnings` ✅
 
-  -- Index for time-range queries (the most common query pattern)
-  CREATE INDEX IF NOT EXISTS idx_semantic_logs_timestamp ON semantic_logs(timestamp);
+**Acceptance Criteria:** ✅ All met
+- ✅ Migration creates the table successfully in-memory
+- ✅ All CRUD operations pass round-trip tests
+- ✅ `key_entities` correctly serialized as JSON string ↔ `Vec<String>`
+- ✅ No `.unwrap()` in non-test code
+- ✅ `cargo test -p chronos-daemon` → all green
 
-  -- Index for filtering by application
-  CREATE INDEX IF NOT EXISTS idx_semantic_logs_app ON semantic_logs(active_application);
-  ```
-
-  > **Go parallel:** In Go, you'd use `golang-migrate` or `goose` for SQL migrations. Rust's `sqlx` has a built-in `sqlx::migrate!()` macro that embeds migrations at compile time — like `go:embed` for SQL files.
-
-- [ ] **4.2** Create `crates/chronos-daemon/src/database.rs`:
-  - `Database` struct holding a `SqlitePool`:
-    ```rust
-    pub struct Database {
-        pool: SqlitePool,
-    }
-    ```
-  - `Database::new(database_url: &str) -> Result<Self>` — connects and runs migrations
-  - `Database::new_in_memory() -> Result<Self>` — for testing (`:memory:`)
-  - `Database::insert_semantic_log(&self, log: &SemanticLog) -> Result<()>` — INSERT with `sqlx::query`
-  - `Database::get_logs_by_date_range(&self, from: DateTime<Utc>, to: DateTime<Utc>) -> Result<Vec<SemanticLog>>` — SELECT with timestamp range
-  - `Database::get_log_count(&self) -> Result<i64>` — COUNT for status display
-  - `Database::get_recent_logs(&self, limit: i64) -> Result<Vec<SemanticLog>>` — SELECT ORDER BY timestamp DESC LIMIT N
-
-  > **Go parallel:** This is your `database/sql` + `sqlc` pattern. But `sqlx` validates SQL at compile time via `query!` macros — like `sqlc generate` but integrated into the build. For runtime queries we'll use `sqlx::query` (non-macro) with `.bind()` to avoid needing a live database at compile time.
-
-- [ ] **4.3** Write tests (`#[cfg(test)]` in `database.rs`):
-  - `test_insert_and_query_round_trip` — insert a SemanticLog, query it back, verify all fields match
-  - `test_get_logs_by_date_range` — insert logs at different timestamps, query a range, verify filtering
-  - `test_get_log_count` — insert N logs, verify count returns N
-  - `test_get_recent_logs_respects_limit` — insert 10 logs, query with limit 3, verify 3 returned in descending order
-  - `test_empty_database_returns_zero_count` — verify empty DB returns count 0
-  - All tests use `Database::new_in_memory()` — no real file I/O
-
-- [ ] **4.4** Run: `cargo test -p chronos-daemon`
-- [ ] **4.5** Run: `cargo clippy -p chronos-daemon -- -D warnings`
-
-**Acceptance Criteria:**
-- Migration creates the table successfully in-memory
-- All CRUD operations pass round-trip tests
-- `key_entities` correctly serialized as JSON string ↔ `Vec<String>`
-- No `.unwrap()` in non-test code
-- `cargo test -p chronos-daemon` → all green
-
-**✋ Pause Point — Wait for user review before proceeding to Step 5.**
+**✅ Step 4 complete — Proceeding to Step 5.**
 
 ---
 
