@@ -32,6 +32,6 @@ pub type Result<T> = std::result::Result<T, ChronosError>;
 ```
 
 **Conventional Commit:**
-```
+```text
 feat(chronos-core): implement central ChronosError enum
 ```
