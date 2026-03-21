@@ -12,17 +12,22 @@ This workflow guides the process of breaking down a high-level step from the mil
 3. Understand the Step's goal, dependencies, target crates, and existing high-level bullet points.
 4. Keep the target audience (a pragmatic Senior Go Engineer) and the project's strict architectural constraints in mind.
 
-## 2. Directory setup
+## 2. Branching Strategy
+Before generating any documents or writing code, ALWAYS create a new git branch for the milestone step to isolate the work.
+- Use the naming convention: `feat/step-<number>-<slug>` (e.g., `feat/step-2-core-domain-models`).
+- Run `git checkout -b <branch-name>` via your terminal integration.
+
+## 3. Directory setup
 1. Determine the path for the new tasks directory: it should sit alongside the roadmap document.
 2. The folder name must match the convention: `tasks-step-<number>-<slug>/` (e.g., `tasks-step-2-core-domain-models/`).
 3. If the main roadmap document does not already point to this directory, update it to add: `> 📋 **Detailed tasks:** [tasks-step-<number>-<slug>/](...)` just below the Step's title.
 
-## 3. Granular Task Decomposition
+## 4. Granular Task Decomposition
 Break down the high-level tasks of the Step into a series of smaller, sequential operations. 
 Because of the **Iterative & Verifiable Execution** rule, do not group massive features together.
 Create a separate Markdown document for each sub-component or logical unit inside the new directory (e.g., `01-error-enum.md`, `02-frame-struct.md`, etc.).
 
-## 4. Document Structure
+## 5. Document Structure
 Each generated detailed task document MUST contain the following sections:
 
 - **Title (`# Task X.Y: <Name>`)**
@@ -35,11 +40,11 @@ Each generated detailed task document MUST contain the following sections:
 - **Code Scaffolding (Optional but recommended):** Provide struct, enum, or trait definitions as starting points. Do not write full implementations; leave room for TDD execution.
 - **Conventional Commit:** Suggest a commit message that follows the project rules once the task is complete (e.g., `feat(chronos-core): implement capture config model`).
 
-## 5. Project Constraints Validation
+## 6. Project Constraints Validation
 Before finalizing the documents, double-check:
 - **Are there tests?** Every struct/impl must be accompanied by its unit test.
 - **Is it too large?** If a single `.md` file expects more than 100 lines of code changes, break it down further.
 - **Are hardware boundaries mocked?** Ensure any IO/Side-effects are implemented via Traits.
 
-## 6. Hand-off
+## 7. Hand-off
 Once the documents are created, list the generated files to the user and **PAUSE**. Wait for the user to review the detailed breakdown before beginning the execution phase of those tasks.
