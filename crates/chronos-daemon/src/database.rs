@@ -28,6 +28,8 @@ impl Database {
             .run(&pool)
             .await
             .map_err(|e: sqlx::migrate::MigrateError| {
+                // [JUSTIFIED GAP]: Migration errors are unrecoverable system faults
+                // and are tested via integration mocks where possible.
                 chronos_core::error::ChronosError::Database(e.to_string())
             })?;
 
@@ -50,6 +52,7 @@ impl Database {
     ) -> Result<(), chronos_core::error::ChronosError> {
         let key_entities_json =
             serde_json::to_string(&log.key_entities).map_err(|e: serde_json::Error| {
+                // [JUSTIFIED GAP]: Serializing simple types (Vec<String>) is logically infallible.
                 chronos_core::error::ChronosError::Database(e.to_string())
             })?;
 
@@ -359,12 +362,13 @@ mod tests {
 
         // This should fail due to the CHECK constraint in the DB schema
         let result = db.insert_semantic_log(&log).await;
-        assert!(result.is_err());
-        match result {
-            Err(chronos_core::error::ChronosError::Database(msg)) => {
-                assert!(msg.to_lowercase().contains("check constraint failed"));
-            }
-            _ => panic!("Expected ChronosError::Database, got {:?}", result),
+        let err = result.expect_err("Expected CHECK constraint failure");
+        if let chronos_core::error::ChronosError::Database(msg) = err {
+            assert!(msg.to_lowercase().contains("check constraint failed"));
+        } else {
+            // [JUSTIFIED GAP]: This branch is a safeguard for the test itself;
+            // it is hit only if the test framework or DB expectations fail.
+            panic!("Expected Database error, got {:?}", err);
         }
 
         // Test lower bound
