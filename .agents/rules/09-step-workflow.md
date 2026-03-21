@@ -47,6 +47,7 @@ Step 2, Task 2.2"
 
 **Rules:**
 - Run `cargo check` (or equivalent verification) BEFORE committing — never commit broken code
+- Update the detailed task checklist and the master milestone roadmap, and stage those documentation changes together with the code
 - Group trivially related sub-steps into a single commit only if they are part of the same numbered task
 - Never squash multiple numbered tasks into one commit
 

@@ -5,12 +5,12 @@
 **Mental Map / Go Parallel:** In Go, interfaces are satisfied implicitly and are automatically safe to pass across goroutines. In Rust, we define explicit `trait`s. To ensure they can be safely sent across Tokio threads, we must add `Send + Sync` bounds. Since async methods in traits are a bit tricky before Rust 1.75, we'll use the `async_trait` crate (or native async if supported, but `async-trait` is a widely accepted pragmatic standard).
 
 **Implementation Steps:**
-- [ ] Add `async-trait = "0.1"` dependency to `crates/chronos-core/Cargo.toml`.
-- [ ] Create `crates/chronos-core/src/traits.rs`.
-- [ ] Define the `ImageCapture` trait returning `Result<Frame>`.
-- [ ] Define the `VisionInference` trait accepting `&Frame` and returning `Result<SemanticLog>`.
-- [ ] Run `cargo check -p chronos-core` to verify compilation.
-- [ ] **Conventional Commit:** `git commit -m "feat(chronos-core): define ImageCapture and VisionInference traits"`
+- [x] Add `async-trait = "0.1"` dependency to `crates/chronos-core/Cargo.toml`.
+- [x] Create `crates/chronos-core/src/traits.rs`.
+- [x] Define the `ImageCapture` trait returning `Result<Frame>`.
+- [x] Define the `VisionInference` trait accepting `&Frame` and returning `Result<SemanticLog>`.
+- [x] Run `cargo check -p chronos-core` to verify compilation.
+- [x] **Conventional Commit:** `git commit -m "feat(chronos-core): define ImageCapture and VisionInference traits"`
   > ⚠️ **CRITICAL RULE:** The AI and Developer MUST execute this `git commit` *before* moving to or beginning the execution of the next sequential task.
 
 **Code Scaffolding:**
