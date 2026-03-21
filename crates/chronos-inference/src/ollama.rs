@@ -163,6 +163,16 @@ mod tests {
     use wiremock::matchers::{body_json, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
+    fn make_test_frame() -> Frame {
+        Frame {
+            id: Ulid::new(),
+            timestamp: chrono::Utc::now(),
+            image_data: vec![0, 1, 2, 3],
+            width: 10,
+            height: 10,
+        }
+    }
+
     #[test]
     fn test_ollama_vision_creation() {
         let config = VlmConfig::default();
@@ -277,13 +287,7 @@ mod tests {
             timeout_seconds: 5,
         };
         let vision = OllamaVision::new(config).unwrap();
-        let frame = Frame {
-            id: Ulid::new(),
-            timestamp: chrono::Utc::now(),
-            image_data: vec![0, 1, 2, 3],
-            width: 10,
-            height: 10,
-        };
+        let frame = make_test_frame();
 
         let result = vision.analyze_frame(&frame).await.unwrap();
         assert_eq!(result.description, "Mocked screenshot analysis");
@@ -307,13 +311,7 @@ mod tests {
             ..VlmConfig::default()
         };
         let vision = OllamaVision::new(config).unwrap();
-        let frame = Frame {
-            id: Ulid::new(),
-            timestamp: chrono::Utc::now(),
-            image_data: vec![],
-            width: 0,
-            height: 0,
-        };
+        let frame = make_test_frame();
 
         let result = vision.analyze_frame(&frame).await;
         assert!(matches!(
@@ -338,13 +336,7 @@ mod tests {
             ..VlmConfig::default()
         };
         let vision = OllamaVision::new(config).unwrap();
-        let frame = Frame {
-            id: Ulid::new(),
-            timestamp: chrono::Utc::now(),
-            image_data: vec![],
-            width: 0,
-            height: 0,
-        };
+        let frame = make_test_frame();
 
         let result = vision.analyze_frame(&frame).await;
         assert!(matches!(
@@ -369,13 +361,7 @@ mod tests {
             ..VlmConfig::default()
         };
         let vision = OllamaVision::new(config).unwrap();
-        let frame = Frame {
-            id: Ulid::new(),
-            timestamp: chrono::Utc::now(),
-            image_data: vec![],
-            width: 0,
-            height: 0,
-        };
+        let frame = make_test_frame();
 
         let result = vision.analyze_frame(&frame).await;
         assert!(matches!(
@@ -393,13 +379,7 @@ mod tests {
             ..VlmConfig::default()
         };
         let vision = OllamaVision::new(config).unwrap();
-        let frame = Frame {
-            id: Ulid::new(),
-            timestamp: chrono::Utc::now(),
-            image_data: vec![],
-            width: 0,
-            height: 0,
-        };
+        let frame = make_test_frame();
 
         let result = vision.analyze_frame(&frame).await;
         assert!(matches!(
