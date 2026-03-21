@@ -9,8 +9,19 @@ on:
     branches: [main]
   pull_request:
 
+# Reason: Cancels in-progress CI runs when a new commit is pushed to the same PR.
+# This avoids wasting runner minutes on stale commits that the developer has already superseded.
+# Go Equivalent: Like setting `--cancel-stale` in a CI orchestrator (e.g., Buildkite).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
+  # Reason: Tells the sqlx compiler plugin to use the cached query metadata
+  # from the .sqlx/ directory instead of connecting to a live database.
+  # Go Equivalent: Using pre-generated mock data for compile-time checks.
+  SQLX_OFFLINE: true
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
@@ -34,26 +45,54 @@ jobs:
         run: cargo fmt --all -- --check
 
   # ────────────────────────────────────────────────────────────────────────────
-  # LINT: Clippy
+  # SECURITY: Audit
   # ────────────────────────────────────────────────────────────────────────────
-  clippy:
-    name: clippy
+  security:
+    name: cargo-deny
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      # Reason: Installs OS-level C dependencies required by the `xcap` crate (Wayland/X11/PipeWire headers).
+      # Reason: Installs cargo-deny using a fast pre-compiled binary cache.
+      # Go Equivalent: Installing nancy, govulncheck, or similar supply-chain audit tools.
+      - uses: taiki-e/install-action@cargo-deny
+
+      - name: Run security audit
+        run: cargo deny check
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # LINT: Clippy & SQLx Check
+  # ────────────────────────────────────────────────────────────────────────────
+  clippy:
+    name: clippy & sqlx check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Reason: Caches OS-level C dependencies required by the `xcap` crate (Wayland/X11/PipeWire headers).
       # Go Equivalent: Running `apt-get install` before a build that relies heavily on CGO bindings for OS APIs.
-      - name: Install system dependencies (xcap)
-        run: sudo apt-get update && sudo apt-get install -y pkg-config libegl1-mesa-dev libwayland-dev libx11-xcb-dev libxcb-randr0-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev clang libclang-dev
+      - name: Cache and install system dependencies (xcap)
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: pkg-config libegl1-mesa-dev libwayland-dev libx11-xcb-dev libxcb-randr0-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev clang libclang-dev
+          version: 1.0
 
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
 
+      # Install sqlx-cli to check offline queries
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: sqlx-cli
+
       # Reason: Caches the Cargo registry and compiled artifacts to avoid rebuilding the entire dependency tree.
       # Go Equivalent: Caching the `$GOPATH/pkg/mod` and `~/.cache/go-build` directories in CI.
       - uses: Swatinem/rust-cache@v2
+
+      # Check if developer forgot to run `cargo sqlx prepare`
+      - name: Check sqlx queries (offline)
+        run: cargo sqlx prepare --workspace --check
 
       # Reason: Runs the official Rust linter across the workspace. `-D warnings` enforces zero-tolerance for warnings.
       # Go Equivalent: Running `go vet` and `staticcheck` (or `golangci-lint`) configured to fail on any warning.
@@ -61,16 +100,23 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
 
   # ────────────────────────────────────────────────────────────────────────────
-  # TEST & RAG: Coverage
+  # TEST & COVERAGE (nextest)
+  # Reason: Runs only after format, security, and lint all pass.
+  # This prevents wasting expensive runner minutes on the longest job
+  # when a PR has trivially broken formatting or a security advisory.
   # ────────────────────────────────────────────────────────────────────────────
   coverage:
     name: test + coverage
+    needs: [format, security, clippy]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install system dependencies (xcap)
-        run: sudo apt-get update && sudo apt-get install -y pkg-config libegl1-mesa-dev libwayland-dev libx11-xcb-dev libxcb-randr0-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev clang libclang-dev
+      - name: Cache and install system dependencies (xcap)
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: pkg-config libegl1-mesa-dev libwayland-dev libx11-xcb-dev libxcb-randr0-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev clang libclang-dev
+          version: 1.0
 
       # Reason: Installs the llvm-tools-preview component to extract native coverage data from the LLVM backend.
       # Go Equivalent: Not needed in Go, as coverage instrumentation is baked directly into the standard compiler.
@@ -78,16 +124,17 @@ jobs:
         with:
           components: llvm-tools-preview
 
-      # Reason: Installs the binary that bridges Cargo and LLVM coverage generation.
+      # Reason: Installs the binary that bridges Cargo and LLVM coverage generation, and the nextest test runner.
       # Go Equivalent: The standard `go test` CLI handles this natively without external binaries.
       - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: taiki-e/install-action@cargo-nextest
 
       - uses: Swatinem/rust-cache@v2
 
-      # Reason: Runs the test suite with LLVM instrumentation enabled and outputs a standard lcov file for Codecov.
+      # Reason: Runs the test suite using nextest with LLVM instrumentation enabled.
       # Go Equivalent: Running `go test -coverprofile=coverage.out ./...`
       - name: Generate code coverage
-        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+        run: cargo llvm-cov nextest --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
