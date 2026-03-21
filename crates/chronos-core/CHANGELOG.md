@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/garnizeh/chronos/compare/chronos-core-v0.1.0...chronos-core-v0.2.0) (2026-03-21)
+
+
+### Features
+
+* implement pragmatic CI/CD and developer tooling improvements ([5cd00de](https://github.com/garnizeh/chronos/commit/5cd00de1efffd8aa6f91c0974d8c9a7ab222dbd2))
+
 ## 0.1.0 (2026-03-21)
 
 
