@@ -29,7 +29,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "2"
-ulid = { version = "1.1", features = ["serde"] }
+ulid = { version = "1.2.1", features = ["serde"] }
 ```
 
 **Why these dependencies:**
