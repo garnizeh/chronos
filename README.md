@@ -27,8 +27,9 @@ Chronos is a background daemon that periodically captures your screen, sends the
 
 ## Prerequisites
 
-- **Rust** 1.75+ (`rustup` recommended)
-- **Ollama** installed and running (`ollama serve`)
+- **Rust** 1.94+ (`rustup` recommended)
+- **Cargo** 1.94+ (`cargo` recommended)
+- **Ollama** 0.17.4+ installed and running (`ollama serve`)
 - A Vision Language Model pulled locally (e.g. `ollama pull moondream`)
 - **Linux** with X11 display server (Wayland support planned)
 
