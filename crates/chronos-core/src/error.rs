@@ -61,12 +61,10 @@ mod tests {
 
     #[test]
     fn test_result_type_alias_failure_pattern_match() {
-        // Didactic test showing exhaustive pattern matching on the Error variant
+        // Didactic test showing extraction of the Error variant
         let res: Result<()> = Err(ChronosError::Timeout("VLM timeout".to_string()));
 
-        match res {
-            Err(ChronosError::Timeout(msg)) => assert_eq!(msg, "VLM timeout"),
-            _ => panic!("Expected a Timeout error!"),
-        }
+        let err = res.unwrap_err();
+        assert_eq!(err, ChronosError::Timeout("VLM timeout".to_string()));
     }
 }
