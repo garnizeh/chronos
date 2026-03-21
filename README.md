@@ -2,10 +2,15 @@
 
 **Your personal context engine — a local-first screen capture daemon that understands what you're doing.**
 
+[![GitHub Release](https://img.shields.io/github/v/release/garnizeh/chronos?display_name=tag&logo=github)](https://github.com/garnizeh/chronos/releases)
 [![Rust Version](https://img.shields.io/badge/rust-1.94%2B-blue.svg?logo=rust)](https://www.rust-lang.org/)
+[![Ollama Version](https://img.shields.io/badge/ollama-0.17%2B-black.svg?logo=ollama)](https://ollama.com/)
 [![CI](https://github.com/garnizeh/chronos/actions/workflows/ci.yml/badge.svg)](https://github.com/garnizeh/chronos/actions/workflows/ci.yml)
 [![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/garnizeh/chronos?utm_source=oss&utm_medium=github&utm_campaign=garnizeh%2Fchronos&labelColor=171717&color=FF570A&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 [![codecov](https://codecov.io/gh/garnizeh/chronos/graph/badge.svg?token=UG4S5JZMDI)](https://codecov.io/gh/garnizeh/chronos)
+[![Platform](https://img.shields.io/badge/platform-linux%20(X11)-lightgrey)](#prerequisites)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/garnizeh/chronos/pulls)
 
 > 🚧 **Under active development** — Milestone 1 MVP in progress.
 

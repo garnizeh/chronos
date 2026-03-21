@@ -1,5 +1,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# Chronos CI — runs cargo fmt, clippy, and tests on every push/PR
+# Reason: Chronos CI — Parallelized Pipeline for faster feedback loops.
+# Go Equivalent: Splitting `go fmt`, `go vet`, and `go test` into independent CI jobs to run concurrently.
 # ──────────────────────────────────────────────────────────────────────────────
 name: CI
 
@@ -10,62 +11,87 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  # Fail CI on any rustc/clippy warning — keeps the codebase clean from day 1
-  RUSTFLAGS: "-D warnings"
 
 jobs:
-  check:
-    name: fmt + clippy + test
+  # ────────────────────────────────────────────────────────────────────────────
+  # FAST FAIL: Format
+  # ────────────────────────────────────────────────────────────────────────────
+  format:
+    name: fmt
     runs-on: ubuntu-latest
-
     steps:
-      # ── 1. Checkout ─────────────────────────────────────────────────────
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      # ── 2. Rust toolchain (stable) ──────────────────────────────────────
-      #    llvm-tools-preview is required by cargo-llvm-cov to read
-      #    LLVM instrumentation data (similar to -coverprofile in Go).
+      # Reason: Installs only the minimal toolchain needed for formatting.
+      # Go Equivalent: Using a minimal alpine/golang base image just to check syntax.
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt, clippy, llvm-tools-preview
+          components: rustfmt
 
-      # ── 2.5. OS Dependencies ────────────────────────────────────────────
-      #    xcap needs EGL, X11, Wayland, and PipeWire C headers to compile.
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y pkg-config libegl1-mesa-dev libwayland-dev libx11-xcb-dev libxcb-randr0-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev clang libclang-dev
-
-      # ── 3. Install cargo-llvm-cov ──────────────────────────────────────
-      #    Source-based code coverage using LLVM instrumentation.
-      #    Think of it as Go's `go test -coverprofile` but for Rust.
-      - uses: taiki-e/install-action@cargo-llvm-cov
-
-      # ── 4. Cargo cache ─────────────────────────────────────────────────
-      #    Caches ~/.cargo/registry, ~/.cargo/git, and target/
-      #    Dramatically speeds up builds after the first run.
-      - uses: Swatinem/rust-cache@v2
-
-      # ── 5. Format check ────────────────────────────────────────────────
-      #    Equivalent to `go fmt` — enforces consistent style.
+      # Reason: Fast fail mechanism. Fails in seconds if code is not properly formatted, saving runner minutes.
+      # Go Equivalent: Running `go fmt ./...` and failing the build if the git working tree becomes dirty.
       - name: cargo fmt
         run: cargo fmt --all -- --check
 
-      # ── 6. Lint ────────────────────────────────────────────────────────
-      #    Equivalent to `go vet` + `staticcheck` combined.
-      #    -D warnings: treat all warnings as errors.
+  # ────────────────────────────────────────────────────────────────────────────
+  # LINT: Clippy
+  # ────────────────────────────────────────────────────────────────────────────
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Reason: Installs OS-level C dependencies required by the `xcap` crate (Wayland/X11/PipeWire headers).
+      # Go Equivalent: Running `apt-get install` before a build that relies heavily on CGO bindings for OS APIs.
+      - name: Install system dependencies (xcap)
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libegl1-mesa-dev libwayland-dev libx11-xcb-dev libxcb-randr0-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev clang libclang-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      # Reason: Caches the Cargo registry and compiled artifacts to avoid rebuilding the entire dependency tree.
+      # Go Equivalent: Caching the `$GOPATH/pkg/mod` and `~/.cache/go-build` directories in CI.
+      - uses: Swatinem/rust-cache@v2
+
+      # Reason: Runs the official Rust linter across the workspace. `-D warnings` enforces zero-tolerance for warnings.
+      # Go Equivalent: Running `go vet` and `staticcheck` (or `golangci-lint`) configured to fail on any warning.
       - name: cargo clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
-      # ── 7. Tests + Coverage ────────────────────────────────────────────
-      #    Runs all workspace tests with LLVM instrumentation and
-      #    outputs an lcov report for Codecov ingestion.
+  # ────────────────────────────────────────────────────────────────────────────
+  # TEST & RAG: Coverage
+  # ────────────────────────────────────────────────────────────────────────────
+  coverage:
+    name: test + coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install system dependencies (xcap)
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libegl1-mesa-dev libwayland-dev libx11-xcb-dev libxcb-randr0-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev clang libclang-dev
+
+      # Reason: Installs the llvm-tools-preview component to extract native coverage data from the LLVM backend.
+      # Go Equivalent: Not needed in Go, as coverage instrumentation is baked directly into the standard compiler.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      # Reason: Installs the binary that bridges Cargo and LLVM coverage generation.
+      # Go Equivalent: The standard `go test` CLI handles this natively without external binaries.
+      - uses: taiki-e/install-action@cargo-llvm-cov
+
+      - uses: Swatinem/rust-cache@v2
+
+      # Reason: Runs the test suite with LLVM instrumentation enabled and outputs a standard lcov file for Codecov.
+      # Go Equivalent: Running `go test -coverprofile=coverage.out ./...`
       - name: Generate code coverage
         run: cargo llvm-cov --workspace --lcov --output-path lcov.info
 
-      # ── 8. Upload coverage to Codecov ──────────────────────────────────
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
-
