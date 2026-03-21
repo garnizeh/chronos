@@ -194,7 +194,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - [x] **1.4** Create `crates/chronos-capture/Cargo.toml` with dependencies:
   - `chronos-core = { path = "../chronos-core" }`
   - `xcap = "0.0.13"` (or latest)
-  - `tokio = { version = "1", features = ["sync"] }`  _(channel only — no full runtime)_
+  - `tokio = { version = "1", features = ["sync"] }`  *(channel only — no full runtime)*
 - [x] **1.5** Create `crates/chronos-capture/src/lib.rs` stub
 - [x] **1.6** Create `crates/chronos-inference/Cargo.toml` with dependencies:
   - `chronos-core = { path = "../chronos-core" }`
