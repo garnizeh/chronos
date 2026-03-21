@@ -203,7 +203,7 @@ mod tests {
             activity_category: Some("Test Category".to_string()),
             key_entities: vec!["Entity1".to_string(), "Entity2".to_string()],
             confidence_score: 0.9,
-            raw_vlm_response: "{}".to_string(),
+            raw_vlm_response: "{\"status\": \"ok\"}".to_string(),
         };
 
         db.insert_semantic_log(&log).await.unwrap();
@@ -213,21 +213,77 @@ mod tests {
 
         let recent = db.get_recent_logs(1).await.unwrap();
         assert_eq!(recent.len(), 1);
-        assert_eq!(recent[0].id, log.id);
-        assert_eq!(recent[0].description, log.description);
-        assert_eq!(recent[0].key_entities, log.key_entities);
+
+        // Verify all fields match after round-trip
+        // Note: SQLite storage might have slightly different RFC3339 string representation
+        // so we compare the important values or use the PartialEq implementation if precise.
+        let retrieved = &recent[0];
+        assert_eq!(retrieved.id, log.id);
+        assert_eq!(retrieved.source_frame_id, log.source_frame_id);
+        assert_eq!(retrieved.description, log.description);
+        assert_eq!(retrieved.active_application, log.active_application);
+        assert_eq!(retrieved.activity_category, log.activity_category);
+        assert_eq!(retrieved.key_entities, log.key_entities);
+        assert_eq!(retrieved.confidence_score, log.confidence_score);
+        assert_eq!(retrieved.raw_vlm_response, log.raw_vlm_response);
+
+        // Timestamps should match down to the second (SQLite precision in this impl)
+        assert_eq!(retrieved.timestamp.to_rfc3339(), log.timestamp.to_rfc3339());
     }
 
     #[tokio::test]
-    async fn test_get_logs_by_date_range() {
+    async fn test_empty_database_returns_zero_count() {
+        let db = Database::new_in_memory().await.unwrap();
+        let count = db.get_log_count().await.unwrap();
+        assert_eq!(count, 0);
+
+        let recent = db.get_recent_logs(10).await.unwrap();
+        assert!(recent.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_recent_logs_ordering_and_limit() {
         let db = Database::new_in_memory().await.unwrap();
         let now = Utc::now();
 
-        let log1 = SemanticLog {
+        // Insert 5 logs with increasing timestamps
+        for i in 0..5 {
+            let log = SemanticLog {
+                id: Ulid::new(),
+                timestamp: now + chrono::Duration::try_seconds(i).unwrap(),
+                source_frame_id: Ulid::new(),
+                description: format!("Log {}", i),
+                active_application: None,
+                activity_category: None,
+                key_entities: vec![],
+                confidence_score: 1.0,
+                raw_vlm_response: "".to_string(),
+            };
+            db.insert_semantic_log(&log).await.unwrap();
+        }
+
+        // Test limit
+        let recent_3 = db.get_recent_logs(3).await.unwrap();
+        assert_eq!(recent_3.len(), 3);
+
+        // Test ordering (most recent first)
+        assert_eq!(recent_3[0].description, "Log 4");
+        assert_eq!(recent_3[1].description, "Log 3");
+        assert_eq!(recent_3[2].description, "Log 2");
+    }
+
+    #[tokio::test]
+    async fn test_get_logs_by_date_range_inclusivity() {
+        let db = Database::new_in_memory().await.unwrap();
+        let now = Utc::now();
+        let start = now - chrono::Duration::try_minutes(10).unwrap();
+        let end = now;
+
+        let log_at_start = SemanticLog {
             id: Ulid::new(),
-            timestamp: now - chrono::Duration::try_minutes(10).unwrap(),
+            timestamp: start,
             source_frame_id: Ulid::new(),
-            description: "Old log".to_string(),
+            description: "At start".to_string(),
             active_application: None,
             activity_category: None,
             key_entities: vec![],
@@ -235,11 +291,11 @@ mod tests {
             raw_vlm_response: "".to_string(),
         };
 
-        let log2 = SemanticLog {
+        let log_at_end = SemanticLog {
             id: Ulid::new(),
-            timestamp: now,
+            timestamp: end,
             source_frame_id: Ulid::new(),
-            description: "New log".to_string(),
+            description: "At end".to_string(),
             active_application: None,
             activity_category: None,
             key_entities: vec![],
@@ -247,18 +303,22 @@ mod tests {
             raw_vlm_response: "".to_string(),
         };
 
-        db.insert_semantic_log(&log1).await.unwrap();
-        db.insert_semantic_log(&log2).await.unwrap();
+        let log_outside = SemanticLog {
+            id: Ulid::new(),
+            timestamp: end + chrono::Duration::try_seconds(1).unwrap(),
+            description: "Outside".to_string(),
+            ..log_at_start.clone()
+        };
 
-        let range_logs = db
-            .get_logs_by_date_range(
-                now - chrono::Duration::try_minutes(5).unwrap(),
-                now + chrono::Duration::try_minutes(5).unwrap(),
-            )
-            .await
-            .unwrap();
+        db.insert_semantic_log(&log_at_start).await.unwrap();
+        db.insert_semantic_log(&log_at_end).await.unwrap();
+        db.insert_semantic_log(&log_outside).await.unwrap();
 
-        assert_eq!(range_logs.len(), 1);
-        assert_eq!(range_logs[0].id, log2.id);
+        let range_logs = db.get_logs_by_date_range(start, end).await.unwrap();
+
+        // Should include both start and end (inclusivity check)
+        assert_eq!(range_logs.len(), 2);
+        assert!(range_logs.iter().any(|l| l.description == "At start"));
+        assert!(range_logs.iter().any(|l| l.description == "At end"));
     }
 }
