@@ -30,8 +30,7 @@ ignore:
   - "examples/**/*"          # Example code
   - ".sqlx/**/*"             # Cached SQLx metadata
   - "**/migrations/**/*"     # Raw SQL migration files
-  - "**/main.rs"             # Entry points are pure wire-up logic (e.g. chronos-daemon/src/main.rs)
-  - "**/build.rs"            # Build scripts
+  - "crates/chronos-daemon/src/main.rs" # Entry point is pure wire-up logic
   - ".agents/**/*"           # Agent workflows and rules
   - "docs/**/*"              # Documentation and roadmap
   - ".github/**/*"           # CI/CD configurations

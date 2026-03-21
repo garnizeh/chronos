@@ -2,7 +2,7 @@
 
 > **Source of truth:** [`docs/design/0001-chronos-personal-context-engine.md`](../design/0001-chronos-personal-context-engine.md)  
 > **Prompt spec:** [`docs/prompt/0001-milestone-01-mvp.md`](../prompt/0001-milestone-01-mvp.md)  
-> **Status:** In Progress — Step 5
+> **Status:** Complete — Step 6
 
 ---
 
@@ -532,17 +532,29 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 **Acceptance Criteria:**
 - Ring buffer tests pass (push, overflow, latest)
 - X11Capture compiles and implements `ImageCapture` trait
-- Capture loop uses `std::thread` (not Tokio task) for blocking X- [x] **6.1** Create `crates/chronos-inference/src/ollama.rs`:
-... (omitting details for brevity but they are [x])
-- [x] **6.2** Add internal helper: `parse_vlm_response(raw: &str) -> (SemanticLog fields)`:
-- [x] **6.3** Write tests (`#[cfg(test)]` in `ollama.rs`):
-- [x] **6.4** Update `crates/chronos-inference/src/lib.rs`:
-- [x] **6.5** Run: `cargo test -p chronos-inference`
-- [x] **6.6** Run: `cargo clippy -p chronos-inference -- -D warnings`TTP server returns valid Ollama response, verify SemanticLog
-    - `test_ollama_http_timeout` — mock server delays, verify `ChronosError::Timeout`
-    - `test_ollama_http_500` — mock server returns 500, verify `ChronosError::Inference`
+- Capture loop uses `std::thread` (not Tokio task) for blocking X11/OS calls (Design §5.A)
+- 100% test coverage for `RingBuffer` logic
 
-- [x] **6.4** Update `crates/chronos-inference/src/lib.rs`:
+---
+
+### Step 6: Ollama Vision Client
+
+**Goal:** Implement the visual inference client for Ollama. (See Design §4.B)
+
+**Depends on:** Step 4 complete (for Domain Log types)
+
+**Crate(s):** `chronos-inference`
+
+**Tasks:**
+
+- [x] **6.1** Create `crates/chronos-inference/src/ollama.rs`:
+  - `OllamaVision` struct (reqwest client + config)
+  - `new(config) -> Result<Self>` constructor (v0.2 refinement)
+- [x] **6.2** Add internal helper: `parse_vlm_response(raw: &str) -> VlmJsonResponse`:
+  - Primary path: `serde_json`
+  - Fallback path: Raw text for hallucinations
+- [x] **6.3** Implement `VisionInference` trait for `OllamaVision`
+- [x] **6.4** Update `crates/chronos-inference/src/lib.rs` (export & re-export):
   ```rust
   pub mod ollama;
   ```

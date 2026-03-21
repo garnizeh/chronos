@@ -86,7 +86,10 @@ impl VisionInference for OllamaVision {
         });
 
         // 3. POST to Ollama
-        let url = format!("{}/api/generate", self.config.ollama_host);
+        let url = format!(
+            "{}/api/generate",
+            self.config.ollama_host.trim_end_matches('/')
+        );
         let response = self
             .client
             .post(&url)
@@ -116,10 +119,14 @@ impl VisionInference for OllamaVision {
         }
 
         let ollama_res: OllamaResponse = response.json().await.map_err(|e| {
-            chronos_core::error::ChronosError::Inference(format!(
-                "Failed to parse Ollama response JSON: {}",
-                e
-            ))
+            if e.is_timeout() {
+                chronos_core::error::ChronosError::Timeout(e.to_string())
+            } else {
+                chronos_core::error::ChronosError::Inference(format!(
+                    "Failed to parse Ollama response JSON: {}",
+                    e
+                ))
+            }
         })?;
 
         // 5. Parse the inner semantic JSON from the VLM
@@ -144,7 +151,7 @@ impl VisionInference for OllamaVision {
 mod tests {
     use super::*;
     use chronos_core::models::VlmConfig;
-    use wiremock::matchers::{method, path};
+    use wiremock::matchers::{body_json, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[test]
@@ -208,8 +215,23 @@ mod tests {
             }"#
         });
 
+        let prompt = "Analyze this screenshot. Provide a structured JSON response with the following fields: \
+                      description (brief summary), active_application (name of the window in focus), \
+                      activity_category (e.g., Development, Communication, Browsing), \
+                      key_entities (list of relevant technologies, names, or topics), \
+                      confidence_score (0.0 to 1.0).";
+
+        let expected_body = json!({
+            "model": "test-model",
+            "prompt": prompt,
+            "images": [general_purpose::STANDARD.encode(vec![0, 1, 2, 3])],
+            "stream": false,
+            "format": "json"
+        });
+
         Mock::given(method("POST"))
             .and(path("/api/generate"))
+            .and(body_json(expected_body))
             .respond_with(ResponseTemplate::new(200).set_body_json(ollama_response))
             .mount(&mock_server)
             .await;
@@ -329,9 +351,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_analyze_frame_connection_error() {
-        // Use a port that is unlikely to be open
+        // Use a deterministic unroutable test address
         let config = VlmConfig {
-            ollama_host: "http://localhost:1".to_string(),
+            ollama_host: "http://10.255.255.1:12345".to_string(),
             ..VlmConfig::default()
         };
         let vision = OllamaVision::new(config).unwrap();
@@ -347,6 +369,7 @@ mod tests {
         assert!(matches!(
             result,
             Err(chronos_core::error::ChronosError::Inference(_))
+                | Err(chronos_core::error::ChronosError::Timeout(_))
         ));
     }
 }

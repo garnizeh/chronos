@@ -9,6 +9,7 @@
 - [x] Update `crates/chronos-inference/src/lib.rs` to declare and re-export the module:
   ```rust
   pub mod ollama;
+  pub use ollama::OllamaVision;
   ```
 - [x] Run `cargo fmt --all -- --check`. Format if needed.
 - [x] Run `cargo clippy -p chronos-inference -- -D warnings`. Ensure ZERO warnings.
