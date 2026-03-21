@@ -11,3 +11,4 @@ members = [
 authors = ["garnizeH"]
 edition = "2024"
 rust-version = "1.94"
+license = "MIT"
