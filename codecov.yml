@@ -10,7 +10,7 @@ coverage:
   status:
     project:
       default:
-        # The overall project must maintain at least 90% coverage (we are currently at ~95%).
+        # The overall project must maintain at least 85% coverage (we are currently at ~95%).
         target: 85%
         # Threshold: allow a tiny 1% drop before failing (to prevent strictly numerical noise).
         threshold: 1%
@@ -18,7 +18,7 @@ coverage:
     patch:
       default:
         # THE PRAGMATIC GATEKEEPER:
-        # Any NEW code introduced MUST be 95% covered (or explicitly justified in comments).
+        # Any NEW code introduced MUST be 90% covered (or explicitly justified in comments).
         target: 90%
 
 # Ignore files that do not contain core business logic or are 

@@ -28,13 +28,20 @@ struct VlmJsonResponse {
 impl OllamaVision {
     /// Create a new OllamaVision client from configuration.
     /// Sets the HTTP timeout based on VLM configuration.
-    pub fn new(config: VlmConfig) -> Self {
+    pub fn new(config: VlmConfig) -> Result<Self> {
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(config.timeout_seconds))
             .build()
-            .expect("Failed to build reqwest client");
+            // [JUSTIFIED GAP] reqwest::Client::build() failures are rare (e.g., TLS backend
+            // initialization error) and extremely difficult to trigger in a portable unit test.
+            .map_err(|e| {
+                chronos_core::error::ChronosError::Config(format!(
+                    "Failed to build HTTP client: {}",
+                    e
+                ))
+            })?;
 
-        Self { client, config }
+        Ok(Self { client, config })
     }
 
     /// Internal helper to parse the VLM's response text.
@@ -143,12 +150,12 @@ mod tests {
     #[test]
     fn test_ollama_vision_creation() {
         let config = VlmConfig::default();
-        let _vision = OllamaVision::new(config);
+        let _vision = OllamaVision::new(config).unwrap();
     }
 
     #[test]
     fn test_parse_valid_vlm_json() {
-        let vision = OllamaVision::new(VlmConfig::default());
+        let vision = OllamaVision::new(VlmConfig::default()).unwrap();
         let raw = r#"{
             "description": "User is writing Rust code",
             "active_application": "VS Code",
@@ -166,7 +173,7 @@ mod tests {
 
     #[test]
     fn test_parse_malformed_vlm_json_fallback() {
-        let vision = OllamaVision::new(VlmConfig::default());
+        let vision = OllamaVision::new(VlmConfig::default()).unwrap();
         let raw = "I see a person working on a computer.";
 
         let parsed = vision.parse_vlm_response(raw);
@@ -177,7 +184,7 @@ mod tests {
 
     #[test]
     fn test_parse_partial_vlm_json() {
-        let vision = OllamaVision::new(VlmConfig::default());
+        let vision = OllamaVision::new(VlmConfig::default()).unwrap();
         let raw = r#"{
             "description": "Minimal response",
             "confidence_score": 0.5
@@ -215,7 +222,7 @@ mod tests {
             model_name: "test-model".to_string(),
             timeout_seconds: 5,
         };
-        let vision = OllamaVision::new(config);
+        let vision = OllamaVision::new(config).unwrap();
         let frame = Frame {
             id: Ulid::new(),
             timestamp: chrono::Utc::now(),
@@ -245,7 +252,7 @@ mod tests {
             ollama_host: mock_server.uri(),
             ..VlmConfig::default()
         };
-        let vision = OllamaVision::new(config);
+        let vision = OllamaVision::new(config).unwrap();
         let frame = Frame {
             id: Ulid::new(),
             timestamp: chrono::Utc::now(),
@@ -276,7 +283,7 @@ mod tests {
             timeout_seconds: 1, // Set timeout smaller than delay
             ..VlmConfig::default()
         };
-        let vision = OllamaVision::new(config);
+        let vision = OllamaVision::new(config).unwrap();
         let frame = Frame {
             id: Ulid::new(),
             timestamp: chrono::Utc::now(),
@@ -307,7 +314,7 @@ mod tests {
             ollama_host: mock_server.uri(),
             ..VlmConfig::default()
         };
-        let vision = OllamaVision::new(config);
+        let vision = OllamaVision::new(config).unwrap();
         let frame = Frame {
             id: Ulid::new(),
             timestamp: chrono::Utc::now(),
@@ -330,7 +337,7 @@ mod tests {
             ollama_host: "http://localhost:1".to_string(),
             ..VlmConfig::default()
         };
-        let vision = OllamaVision::new(config);
+        let vision = OllamaVision::new(config).unwrap();
         let frame = Frame {
             id: Ulid::new(),
             timestamp: chrono::Utc::now(),
