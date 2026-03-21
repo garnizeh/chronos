@@ -8,19 +8,18 @@ This is conceptually similar to a buffered channel in Go `make(chan Frame, capac
 
 ## Implementation Steps
 - [x] Create `crates/chronos-capture/src/ring_buffer.rs`.
-- [x] Define the `FrameRingBuffer` struct wrapping a `std::collections::VecDeque<Frame>` and a `usize` capacity.
-- [x] Implement `new(capacity: usize) -> Self`.
-- [x] Implement `push(&self, frame: Frame)`:
+- [x] Define a thread-safe `FrameRingBuffer` struct wrapping an `Arc<Mutex<VecDeque<Arc<Frame>>>>` with a `usize` capacity.
+- [x] Implement `new(capacity: usize) -> Self` with internal `Arc::new(Mutex::new(...))` initialization.
+- [x] Implement `push(&self, frame: Frame)` for concurrent access:
+  - Acquire the `Mutex` lock.
   - If `len() == capacity`, call `pop_front()` to drop the oldest.
-  - Call `push_back(frame)`.
-- [x] Implement `len(&self) -> usize` and `is_empty(&self) -> bool`.
-- [x] Implement `latest(&self) -> Option<Arc<Frame>>` returning a cloned `Arc` from `back()`.
+  - Call `push_back(Arc::new(frame))`.
+- [x] Implement `len(&self) -> usize` and `is_empty(&self) -> bool` with internal locking.
+- [x] Implement `latest(&self) -> Option<Arc<Frame>>` returning a cloned `Arc` pointer.
 - [x] Write `#[cfg(test)]` block in the same file:
-  - [x] `test_push_within_capacity`
-  - [x] `test_push_drops_oldest_when_full`
-  - [x] `test_latest_returns_most_recent`
-  - [x] `test_empty_buffer`
-- [x] **Task 5.3: Thread-Safe Ring Buffer**: Implemented a bounded `FrameRingBuffer` using `Arc<Mutex<VecDeque<Arc<Frame>>>>`. This provides internal synchronization and efficient data sharing between threads (using `Arc<Frame>` to avoid cloning raw pixels). Verified with concurrent unit tests.
+  - [x] **Concurrent Tests**: `test_concurrent_push` (multiple threads pushing simultaneously).
+  - [x] **Unit Tests**: `test_push_within_capacity`, `test_push_drops_oldest_when_full`, `test_latest_returns_most_recent`, `test_empty_buffer`.
+- [x] **Task 5.3: Thread-Safe Ring Buffer**: Finalized the `Arc<Mutex<VecDeque<Arc<Frame>>>>` implementation to avoid large clones and ensure safe cross-thread sharing.
 - [x] Run `cargo fmt -p chronos-capture -- --check`.
 - [x] Run `cargo test -p chronos-capture`.
 - [x] Run `cargo clippy -p chronos-capture -- -D warnings`.
