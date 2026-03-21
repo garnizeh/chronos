@@ -473,7 +473,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **5.1** Create `crates/chronos-capture/src/ring_buffer.rs`:
+- [x] **5.1** Create `crates/chronos-capture/src/ring_buffer.rs`:
   - `FrameRingBuffer` struct wrapping `VecDeque<Frame>` with a max capacity:
     ```rust
     pub struct FrameRingBuffer {
@@ -495,7 +495,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
   > **Go parallel:** This is a fixed-size channel with buffer, like `make(chan Frame, 64)`, but explicit about what happens on overflow. Go's buffered channel blocks; our ring buffer drops the oldest — a design decision for back-pressure (Design §3.B).
 
-- [ ] **5.2** Create `crates/chronos-capture/src/x11.rs`:
+- [x] **5.2** Create `crates/chronos-capture/src/x11.rs`:
   - `X11Capture` struct implementing `ImageCapture`:
     ```rust
     pub struct X11Capture {
@@ -514,20 +514,20 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
   > **Go parallel:** This is equivalent to starting a goroutine with `go captureLoop(ctx, ch)`. The key difference: Rust requires `std::thread` (not just async) because `xcap`'s X11 calls are blocking and would starve the Tokio executor. In Go, the runtime multiplexes goroutines onto OS threads automatically — Rust gives you explicit control.
 
-- [ ] **5.3** Write tests (`#[cfg(test)]` in `x11.rs`):
+- [x] **5.3** Write tests (`#[cfg(test)]` in `x11.rs`):
   - **Unit tests (no real X11 needed):**
     - `test_x11_capture_creation` — verify struct construction with default config
     - `test_capture_config_defaults` — verify interval and buffer size defaults
   - **Note:** Real X11 capture tests require a display server. We rely on `MockCapture` from Step 3 for pipeline testing. An optional integration test gated behind `#[cfg(feature = "x11-integration")]` can live here for manual verification on a real machine.
 
-- [ ] **5.4** Update `crates/chronos-capture/src/lib.rs`:
+- [x] **5.4** Update `crates/chronos-capture/src/lib.rs`:
   ```rust
   pub mod ring_buffer;
   pub mod x11;
   ```
 
-- [ ] **5.5** Run: `cargo test -p chronos-capture`
-- [ ] **5.6** Run: `cargo clippy -p chronos-capture -- -D warnings`
+- [x] **5.5** Run: `cargo test -p chronos-capture`
+- [x] **5.6** Run: `cargo clippy -p chronos-capture -- -D warnings`
 
 **Acceptance Criteria:**
 - Ring buffer tests pass (push, overflow, latest)

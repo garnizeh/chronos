@@ -7,7 +7,7 @@ use std::collections::VecDeque;
 /// drops the oldest item when full (rather than blocking the sender like a standard
 /// buffered `chan`), you would typically use a slice with a `sync.Mutex` and manually
 /// manage the indices, or use the `container/ring` package.
-/// 
+///
 /// In Rust, `std::collections::VecDeque` is the standard double-ended queue.
 /// We wrap it in this struct to safely enforce our specific back-pressure policy:
 /// "When memory is full, drop the oldest frame, never block the capture."
@@ -77,10 +77,10 @@ mod tests {
     #[test]
     fn test_push_within_capacity() {
         let mut rb = FrameRingBuffer::new(5);
-        
+
         rb.push(create_dummy_frame(100));
         rb.push(create_dummy_frame(200));
-        
+
         assert_eq!(rb.len(), 2);
         assert!(!rb.is_empty());
     }
@@ -88,19 +88,19 @@ mod tests {
     #[test]
     fn test_push_drops_oldest_when_full() {
         let mut rb = FrameRingBuffer::new(2);
-        
+
         let frame1 = create_dummy_frame(100);
         let frame2 = create_dummy_frame(200);
         let frame3 = create_dummy_frame(300); // This should evict frame1
-        
+
         rb.push(frame1.clone());
         rb.push(frame2.clone());
         rb.push(frame3.clone());
-        
+
         assert_eq!(rb.len(), 2, "Capacity should not exceed 2");
-        
+
         // The front of the internal buffer should now be frame2, and back frame3.
-        // Let's verify by popping manually from the internal deque, 
+        // Let's verify by popping manually from the internal deque,
         // though `latest` gives us the back.
         let latest = rb.latest().expect("Buffer should not be empty");
         assert_eq!(latest.width, 300, "Latest frame should be frame3");
@@ -109,10 +109,10 @@ mod tests {
     #[test]
     fn test_latest_returns_most_recent() {
         let mut rb = FrameRingBuffer::new(3);
-        
+
         rb.push(create_dummy_frame(100));
         assert_eq!(rb.latest().unwrap().width, 100);
-        
+
         rb.push(create_dummy_frame(200));
         assert_eq!(rb.latest().unwrap().width, 200);
     }

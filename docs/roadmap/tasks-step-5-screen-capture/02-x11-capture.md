@@ -7,15 +7,15 @@ Implement `X11Capture`, satisfying `ImageCapture` by leveraging `xcap` running o
 In Go, `go captureLoop(ctx, channel)` inherently schedules onto an OS thread. Rust's `tokio::spawn` schedules onto the async executor's thread pool, which can be starved by synchronous calls (like interacting with X11 window managers). Thus, we must use `std::thread::spawn` or `tokio::task::spawn_blocking`. Because this is an infinite loop, `std::thread::spawn` is preferred to maintain a dedicated thread entirely isolated from Tokio's green threads. The `std::sync::mpsc` or `tokio::sync::mpsc` channels form the bridge.
 
 ## Implementation Steps
-- [ ] Create `crates/chronos-capture/src/x11.rs`.
-- [ ] Define the `X11Capture` struct:
+- [x] Create `crates/chronos-capture/src/x11.rs`.
+- [x] Define the `X11Capture` struct:
   ```rust
   pub struct X11Capture {
       config: CaptureConfig,
   }
   ```
-- [ ] Implement `X11Capture::new(config: CaptureConfig) -> Self`.
-- [ ] Implement `ImageCapture` for `X11Capture`:
+- [x] Implement `X11Capture::new(config: CaptureConfig) -> Self`.
+- [x] Implement `ImageCapture` for `X11Capture`:
   - `capture_frame(&self) -> Result<Frame>`:
     - Call `xcap::Monitor::all()` to get a list of active monitors. Take the primary (first).
     - Call `capture_image()` on the monitor.
@@ -23,9 +23,9 @@ In Go, `go captureLoop(ctx, channel)` inherently schedules onto an OS thread. Ru
     - Pack into `chronos_core::models::Frame`.
     - Map `xcap` errors or PNG encoding errors to `ChronosError::Capture`.
     - Note: Because `capture_frame` is `async` in the trait but `xcap` blocks, wrap the synchronous portion in `tokio::task::spawn_blocking` to prevent starving the executor.
-- [ ] Add testing module `#[cfg(test)]`:
-  - [ ] `test_x11_capture_creation`
-  - [ ] `test_capture_config_defaults` (if relying on struct properties locally).
+- [x] Add testing module `#[cfg(test)]`:
+  - [x] `test_x11_capture_creation`
+  - [x] `test_capture_config_defaults` (if relying on struct properties locally).
   - *Note: Don't write a real compile-time test for `xcap` taking a screenshot unless you guard it with `#[cfg(feature = "x11")]` as it will fail on headless CI.*
 
 ## Code Scaffolding
