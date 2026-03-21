@@ -3,10 +3,10 @@ use serde::{Deserialize, Serialize};
 use ulid::Ulid;
 
 /// Represents a single captured frame from the screen.
-/// 
-/// **Go Parallel (Didactic):** This is a simple data struct. Since we don't want 
-/// to serialize `Frame` to disk or over the network, we explicitly *do not* add 
-/// `Serialize` or `Deserialize` derivations (akin to omitting `json:"..."` tags in Go). 
+///
+/// **Go Parallel (Didactic):** This is a simple data struct. Since we don't want
+/// to serialize `Frame` to disk or over the network, we explicitly *do not* add
+/// `Serialize` or `Deserialize` derivations (akin to omitting `json:"..."` tags in Go).
 /// This enforces our architecture constraint at compile time: Frames live purely in RAM.
 #[derive(Debug, Clone)]
 pub struct Frame {
@@ -20,9 +20,9 @@ pub struct Frame {
 /// Represents the structured output from the Vision-Language Model (VLM).
 ///
 /// **Go Parallel (Didactic):** In Go, to seamlessly convert a struct to and from JSON
-/// (e.g., for an HTTP API or storing in a single DB column), we use `json:"..."` struct 
-/// tags along with `encoding/json`. In Rust, the `serde` crate provides macros 
-/// (`#[derive(Serialize, Deserialize)]`) that generate high-performance serialization 
+/// (e.g., for an HTTP API or storing in a single DB column), we use `json:"..."` struct
+/// tags along with `encoding/json`. In Rust, the `serde` crate provides macros
+/// (`#[derive(Serialize, Deserialize)]`) that generate high-performance serialization
 /// logic at compile time, achieving the exact same objective with zero runtime reflection cost.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SemanticLog {
@@ -38,8 +38,8 @@ pub struct SemanticLog {
 }
 
 /// Configuration for the screen capture timing and memory limit.
-/// 
-/// **Go Parallel:** In Go, this would often be instantiated via a `NewDefaultCaptureConfig()` 
+///
+/// **Go Parallel:** In Go, this would often be instantiated via a `NewDefaultCaptureConfig()`
 /// function. Rust uses the standard `Default` trait, allowing `CaptureConfig::default()`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CaptureConfig {
@@ -93,7 +93,7 @@ mod tests {
         assert_eq!(frame.height, 1080);
         assert_eq!(frame.image_data.len(), 3);
         assert_eq!(frame.timestamp, now);
-        
+
         // Ulids are sortable and non-empty
         assert!(!frame.id.to_string().is_empty());
     }
@@ -117,7 +117,8 @@ mod tests {
         let json_str = serde_json::to_string(&log).expect("Failed to serialize SemanticLog");
 
         // Deserialize back to struct (Go `json.Unmarshal`)
-        let deserialized: SemanticLog = serde_json::from_str(&json_str).expect("Failed to deserialize SemanticLog");
+        let deserialized: SemanticLog =
+            serde_json::from_str(&json_str).expect("Failed to deserialize SemanticLog");
 
         // Assert all fields match after round-trip
         assert_eq!(log, deserialized);
