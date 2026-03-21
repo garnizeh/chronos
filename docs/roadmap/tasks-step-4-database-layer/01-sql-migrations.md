@@ -7,8 +7,8 @@ Create the initial SQLite schema for persisting semantic logs.
 In Go, you'd use `golang-migrate` or `goose` for SQL migrations. Rust's `sqlx` has a built-in `sqlx::migrate!()` macro that embeds migrations at compile time — like `go:embed` for SQL files.
 
 ## Implementation Steps
-- [ ] Create directory `migrations/` at the workspace root if it doesn't exist.
-- [ ] Create file `migrations/001_create_semantic_logs.sql` with the following schema:
+- [x] Create directory `migrations/` at the workspace root if it doesn't exist.
+- [x] Create file `migrations/001_create_semantic_logs.sql` with the following schema:
   ```sql
   -- UP: Create the semantic_logs table
   CREATE TABLE IF NOT EXISTS semantic_logs (
