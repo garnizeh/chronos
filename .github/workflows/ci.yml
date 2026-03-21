@@ -20,7 +20,7 @@ jobs:
     name: fmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Reason: Installs only the minimal toolchain needed for formatting.
       # Go Equivalent: Using a minimal alpine/golang base image just to check syntax.
@@ -40,7 +40,7 @@ jobs:
     name: clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Reason: Installs OS-level C dependencies required by the `xcap` crate (Wayland/X11/PipeWire headers).
       # Go Equivalent: Running `apt-get install` before a build that relies heavily on CGO bindings for OS APIs.
@@ -67,7 +67,7 @@ jobs:
     name: test + coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install system dependencies (xcap)
         run: sudo apt-get update && sudo apt-get install -y pkg-config libegl1-mesa-dev libwayland-dev libx11-xcb-dev libxcb-randr0-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev clang libclang-dev
