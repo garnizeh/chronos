@@ -129,12 +129,25 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - **Triggers:** `push` to `main`, all `pull_request`s
   - **Job: `check`** (runs on `ubuntu-latest`):
     1. Checkout code
-    2. Install Rust stable toolchain with `clippy` and `rustfmt` components
-    3. Cache `~/.cargo` and `target/` (via `Swatinem/rust-cache`)
-    4. `cargo fmt --all -- --check`
-    5. `cargo clippy --workspace --all-targets -- -D warnings`
-    6. `cargo test --workspace`
+    2. Install Rust stable toolchain with `clippy`, `rustfmt`, and `llvm-tools-preview` components
+    3. Install `cargo-llvm-cov` (via `taiki-e/install-action`)
+    4. Cache `~/.cargo` and `target/` (via `Swatinem/rust-cache`)
+    5. `cargo fmt --all -- --check`
+    6. `cargo clippy --workspace --all-targets -- -D warnings`
+    7. `cargo llvm-cov --workspace --lcov --output-path lcov.info` (tests + coverage)
+    8. Upload `lcov.info` to Codecov (via `codecov/codecov-action@v5`)
   - **Note:** CI will only pass once Phase 1 creates the workspace+crates. Phase 0 intentionally commits this file first so the pipeline exists from day one.
+- [ ] **0.5b** Create `.github/workflows/release.yml` — automated releases via `release-please`:
+  - **Triggers:** `push` to `main`
+  - **Permissions:** `contents: write`, `pull-requests: write`
+  - Uses `googleapis/release-please-action@v4` with `release-type: rust`
+  - Parses conventional commits (`feat:`, `fix:`, etc.) to auto-create Release PRs with bumped `Cargo.toml` versions, `CHANGELOG.md`, and GitHub Releases on merge.
+- [ ] **0.5c** Create `.agents/rules/08-conventional-commits.md` — always-on agent rule enforcing:
+  - Conventional commit format (`<type>(<scope>): <description>`)
+  - Allowed types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `perf`, `ci`
+  - Breaking change syntax (`feat!:` or `BREAKING CHANGE:` footer)
+  - Scope convention: use crate name (e.g., `feat(chronos-core): ...`)
+  - Examples of good and bad commit messages
 - [ ] **0.6** Initial commit:
   ```bash
   git add -A
@@ -152,7 +165,9 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 **Acceptance Criteria:**
 - `git log` shows at least one commit
 - `.gitignore`, `LICENSE`, `README.md` exist at the repo root
-- `.github/workflows/ci.yml` exists with a valid workflow definition
+- `.github/workflows/ci.yml` exists with fmt + clippy + coverage + codecov upload
+- `.github/workflows/release.yml` exists with release-please (`release-type: rust`)
+- `.agents/rules/08-conventional-commits.md` exists with always-on trigger
 - `git status` is clean (no untracked files)
 
 **✋ Pause Point — Wait for user review before proceeding to Phase 1.**

@@ -23,27 +23,44 @@ jobs:
       - uses: actions/checkout@v4
 
       # ── 2. Rust toolchain (stable) ──────────────────────────────────────
+      #    llvm-tools-preview is required by cargo-llvm-cov to read
+      #    LLVM instrumentation data (similar to -coverprofile in Go).
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt, clippy
+          components: rustfmt, clippy, llvm-tools-preview
 
-      # ── 3. Cargo cache ─────────────────────────────────────────────────
+      # ── 3. Install cargo-llvm-cov ──────────────────────────────────────
+      #    Source-based code coverage using LLVM instrumentation.
+      #    Think of it as Go's `go test -coverprofile` but for Rust.
+      - uses: taiki-e/install-action@cargo-llvm-cov
+
+      # ── 4. Cargo cache ─────────────────────────────────────────────────
       #    Caches ~/.cargo/registry, ~/.cargo/git, and target/
       #    Dramatically speeds up builds after the first run.
       - uses: Swatinem/rust-cache@v2
 
-      # ── 4. Format check ────────────────────────────────────────────────
+      # ── 5. Format check ────────────────────────────────────────────────
       #    Equivalent to `go fmt` — enforces consistent style.
       - name: cargo fmt
         run: cargo fmt --all -- --check
 
-      # ── 5. Lint ────────────────────────────────────────────────────────
+      # ── 6. Lint ────────────────────────────────────────────────────────
       #    Equivalent to `go vet` + `staticcheck` combined.
       #    -D warnings: treat all warnings as errors.
       - name: cargo clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
-      # ── 6. Tests ───────────────────────────────────────────────────────
-      #    Runs unit + integration tests across the entire workspace.
-      - name: cargo test
-        run: cargo test --workspace
+      # ── 7. Tests + Coverage ────────────────────────────────────────────
+      #    Runs all workspace tests with LLVM instrumentation and
+      #    outputs an lcov report for Codecov ingestion.
+      - name: Generate code coverage
+        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+
+      # ── 8. Upload coverage to Codecov ──────────────────────────────────
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+

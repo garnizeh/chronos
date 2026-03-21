@@ -1,0 +1,34 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Chronos Release — automated releases via release-please
+#
+# release-please reads conventional commits (feat:, fix:, chore:, etc.) and
+# automatically creates a Release PR with:
+#   - Bumped version in Cargo.toml (workspace + crates)
+#   - Auto-generated CHANGELOG.md
+#   - GitHub Release with tag on merge
+#
+# Go parallel: Think of this as `goreleaser` but for the PR/changelog side.
+# It doesn't build binaries — it manages semver + changelogs from commits.
+# ──────────────────────────────────────────────────────────────────────────────
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # Rust-specific: updates version in Cargo.toml files
+          release-type: rust
+
+          # The token needs write access to create PRs and releases.
+          # GITHUB_TOKEN is automatically provided by GitHub Actions.
+          token: ${{ secrets.GITHUB_TOKEN }}
