@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "rust",
+  "plugins": [
+    {
+      "type": "cargo-workspace"
+    }
+  ],
+  "packages": {
+    "crates/chronos-core": {},
+    "crates/chronos-capture": {},
+    "crates/chronos-inference": {},
+    "crates/chronos-daemon": {}
+  }
+}

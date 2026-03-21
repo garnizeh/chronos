@@ -26,8 +26,11 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         with:
-          # Rust-specific: updates version in Cargo.toml files
-          release-type: rust
+          # Manifest-based config: release-please reads the config file
+          # which defines the cargo-workspace plugin and per-crate packages.
+          # Go parallel: like a monorepo tool (nx, turborepo) but for releases.
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
           # The token needs write access to create PRs and releases.
           # GITHUB_TOKEN is automatically provided by GitHub Actions.
