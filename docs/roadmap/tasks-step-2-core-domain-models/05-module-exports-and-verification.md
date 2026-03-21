@@ -5,11 +5,11 @@
 **Mental Map / Go Parallel:** Rust modules (`mod`) are private by default. In Go, capitalized names are exported package-wide automatically. In Rust, you must explicitly declare `pub mod <name>` in the root `lib.rs` file to make its contents discoverable to other crates in the workspace.
 
 **Implementation Steps:**
-- [ ] Create or update `crates/chronos-core/src/lib.rs`.
-- [ ] Add `pub mod error;` and `pub mod models;`.
-- [ ] Run `cargo check -p chronos-core` to ensure modules are wired properly.
-- [ ] Run `cargo fmt --all` to format code uniformly.
-- [ ] Run `cargo clippy -p chronos-core -- -D warnings` to verify zero strictness breaches.
+- [x] Create or update `crates/chronos-core/src/lib.rs`.
+- [x] Add `pub mod error;` and `pub mod models;`.
+- [x] Run `cargo check -p chronos-core` to ensure modules are wired properly.
+- [x] Run `cargo fmt --all` to format code uniformly.
+- [x] Run `cargo clippy -p chronos-core -- -D warnings` to verify zero strictness breaches.
 
 **Code Scaffolding:**
 ```rust

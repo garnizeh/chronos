@@ -5,11 +5,11 @@
 **Mental Map / Go Parallel:** In Go, you often write a `NewDefaultConfig()` function. In Rust, we implement the `Default` trait, which allows standard idiomatic instantiation via `CaptureConfig::default()`.
 
 **Implementation Steps:**
-- [ ] Append to `crates/chronos-core/src/models.rs`.
-- [ ] Write `#[cfg(test)]` to assert that `CaptureConfig::default()` and `VlmConfig::default()` return the exact documented values.
-- [ ] Define `CaptureConfig` and implement `Default`.
-- [ ] Define `VlmConfig` and implement `Default`.
-- [ ] Run `cargo test -p chronos-core` to verify defaults.
+- [x] Append to `crates/chronos-core/src/models.rs`.
+- [x] Write `#[cfg(test)]` to assert that `CaptureConfig::default()` and `VlmConfig::default()` return the exact documented values.
+- [x] Define `CaptureConfig` and implement `Default`.
+- [x] Define `VlmConfig` and implement `Default`.
+- [x] Run `cargo test -p chronos-core` to verify defaults.
 
 **Code Scaffolding:**
 ```rust

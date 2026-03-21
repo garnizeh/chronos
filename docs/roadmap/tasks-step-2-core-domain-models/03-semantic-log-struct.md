@@ -5,11 +5,11 @@
 **Mental Map / Go Parallel:** Like a Go struct with `json:"..."` tags, we rely on `serde` `Serialize` and `Deserialize` to convert this struct to and from JSON, which makes mapping it to HTTP requested JSON or SQLite columns seamless.
 
 **Implementation Steps:**
-- [ ] Append to `crates/chronos-core/src/models.rs`.
-- [ ] Write `#[cfg(test)]` block to verify serialization and deserialization round trips (JSON string -> Object -> JSON string).
-- [ ] Define `SemanticLog` struct with proper Option types for nullable fields.
-- [ ] Add `#[derive(Debug, Clone, Serialize, Deserialize)]`.
-- [ ] Run `cargo test -p chronos-core` to verify mapping logic.
+- [x] Append to `crates/chronos-core/src/models.rs`.
+- [x] Write `#[cfg(test)]` block to verify serialization and deserialization round trips (JSON string -> Object -> JSON string).
+- [x] Define `SemanticLog` struct with proper Option types for nullable fields.
+- [x] Add `#[derive(Debug, Clone, Serialize, Deserialize)]`.
+- [x] Run `cargo test -p chronos-core` to verify mapping logic.
 
 **Code Scaffolding:**
 ```rust

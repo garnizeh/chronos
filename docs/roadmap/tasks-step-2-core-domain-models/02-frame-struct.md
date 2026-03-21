@@ -5,11 +5,11 @@
 **Mental Map / Go Parallel:** This is a simple data struct. Since we don't want to serialize `Frame` to disk or over the network, we explicitly *do not* implement `Serialize`/`Deserialize` (akin to not adding `json:"..."` struct tags in Go), enforcing boundary constraints at compile time.
 
 **Implementation Steps:**
-- [ ] Create file `crates/chronos-core/src/models.rs`.
-- [ ] Write `#[cfg(test)]` block mapping `Frame` instantiation and verifying its properties.
-- [ ] Define `Frame` struct containing ULID, timestamp, image bytes, width, and height.
-- [ ] Add `#[derive(Debug, Clone)]` but **NO** `Serialize`/`Deserialize`.
-- [ ] Run `cargo test -p chronos-core` to ensure it compiles and tests pass.
+- [x] Create file `crates/chronos-core/src/models.rs`.
+- [x] Write `#[cfg(test)]` block mapping `Frame` instantiation and verifying its properties.
+- [x] Define `Frame` struct containing ULID, timestamp, image bytes, width, and height.
+- [x] Add `#[derive(Debug, Clone)]` but **NO** `Serialize`/`Deserialize`.
+- [x] Run `cargo test -p chronos-core` to ensure it compiles and tests pass.
 
 **Code Scaffolding:**
 ```rust
