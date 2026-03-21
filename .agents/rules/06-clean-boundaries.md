@@ -15,4 +15,5 @@ trigger: always_on
     - **Hardware/OS Drivers:** Code that directly invokes non-mockable system APIs (e.g., `xcap::Monitor`, `tokio::main`).
     - **Infallible Operations:** Error paths for operations that cannot realistically fail given the input types (e.g., PNG encoding a valid `RgbaImage`, serializing a simple `Vec<String>`).
     - **Third-Party Faults:** Error handling for unrecoverable third-party driver failures (e.g., SQLite connection loss during an active transaction).
-- **Justification:** Every gap must be identified via `cargo llvm-cov` and justified in the module's `walkthrough` or technical notes.
+- **Justification:** Every gap must be identified via `cargo llvm-cov` and justified in the module's source code using `// [JUSTIFIED GAP]` comments (as per `.agents/workflows/fix-coverage.md`).
+- **Automatic Enforcement:** After executing `just ci-local`, the agent MUST analyze the coverage report. If any non-justified logic coverage gap exists, the agent MUST immediately invoke the library workflow `@[/fix-coverage]` to resolve or document the gap before committing or starting a new step.

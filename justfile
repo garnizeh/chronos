@@ -163,7 +163,9 @@ set shell := ["bash", "-c"]
     cargo nextest run --workspace
     echo -e "\n5. Generating test coverage summary..."
     cargo llvm-cov nextest --workspace
-    echo -e "\n✅ All local CI checks passed! Safe to commit."
+    echo -e "\n6. Final Policy Check..."
+    echo "✅ All local CI checks passed! Safe to commit."
+    echo "💡 POLICY: If coverage is below 100% logic coverage, run the agent workflow: /fix-coverage"
 
 # ==============================================================================
 # 📦 7. RELEASE & MAINTENANCE
