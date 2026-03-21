@@ -59,10 +59,6 @@ impl OllamaVision {
 
 #[async_trait]
 impl VisionInference for OllamaVision {
-    // [JUSTIFIED GAP] This method interacts directly with the local Ollama HTTP API.
-    // Full verification requires a running Ollama instance or complex HTTP mocking
-    // (e.g. wiremock), which is out of scope for the current MVP Phase.
-    // The internal logic (parsing) is covered by unit tests.
     async fn analyze_frame(&self, frame: &Frame) -> Result<SemanticLog> {
         // 1. Base64-encode the image data
         let base64_image = general_purpose::STANDARD.encode(&frame.image_data);
@@ -112,8 +108,6 @@ impl VisionInference for OllamaVision {
             response: String,
         }
 
-        // [JUSTIFIED GAP] Error mapping for third-party reqwest/serde_json failures
-        // are difficult to trigger in a unit test without a mock HTTP server.
         let ollama_res: OllamaResponse = response.json().await.map_err(|e| {
             chronos_core::error::ChronosError::Inference(format!(
                 "Failed to parse Ollama response JSON: {}",
@@ -143,6 +137,8 @@ impl VisionInference for OllamaVision {
 mod tests {
     use super::*;
     use chronos_core::models::VlmConfig;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
 
     #[test]
     fn test_ollama_vision_creation() {
@@ -192,5 +188,161 @@ mod tests {
         assert_eq!(parsed.active_application, None);
         assert!(parsed.key_entities.is_empty());
         assert_eq!(parsed.confidence_score, 0.5);
+    }
+
+    #[tokio::test]
+    async fn test_analyze_frame_success() {
+        let mock_server = MockServer::start().await;
+
+        let ollama_response = json!({
+            "response": r#"{
+                "description": "Mocked screenshot analysis",
+                "active_application": "Firefox",
+                "activity_category": "Browsing",
+                "key_entities": ["GitHub"],
+                "confidence_score": 0.88
+            }"#
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(ollama_response))
+            .mount(&mock_server)
+            .await;
+
+        let config = VlmConfig {
+            ollama_host: mock_server.uri(),
+            model_name: "test-model".to_string(),
+            timeout_seconds: 5,
+        };
+        let vision = OllamaVision::new(config);
+        let frame = Frame {
+            id: Ulid::new(),
+            timestamp: chrono::Utc::now(),
+            image_data: vec![0, 1, 2, 3],
+            width: 10,
+            height: 10,
+        };
+
+        let result = vision.analyze_frame(&frame).await.unwrap();
+        assert_eq!(result.description, "Mocked screenshot analysis");
+        assert_eq!(result.active_application, Some("Firefox".to_string()));
+        assert_eq!(result.confidence_score, 0.88);
+        assert_eq!(result.source_frame_id, frame.id);
+    }
+
+    #[tokio::test]
+    async fn test_analyze_frame_ollama_error() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&mock_server)
+            .await;
+
+        let config = VlmConfig {
+            ollama_host: mock_server.uri(),
+            ..VlmConfig::default()
+        };
+        let vision = OllamaVision::new(config);
+        let frame = Frame {
+            id: Ulid::new(),
+            timestamp: chrono::Utc::now(),
+            image_data: vec![],
+            width: 0,
+            height: 0,
+        };
+
+        let result = vision.analyze_frame(&frame).await;
+        assert!(matches!(
+            result,
+            Err(chronos_core::error::ChronosError::Inference(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_analyze_frame_timeout() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(200).set_delay(Duration::from_secs(2)))
+            .mount(&mock_server)
+            .await;
+
+        let config = VlmConfig {
+            ollama_host: mock_server.uri(),
+            timeout_seconds: 1, // Set timeout smaller than delay
+            ..VlmConfig::default()
+        };
+        let vision = OllamaVision::new(config);
+        let frame = Frame {
+            id: Ulid::new(),
+            timestamp: chrono::Utc::now(),
+            image_data: vec![],
+            width: 0,
+            height: 0,
+        };
+
+        let result = vision.analyze_frame(&frame).await;
+        assert!(matches!(
+            result,
+            Err(chronos_core::error::ChronosError::Timeout(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_analyze_frame_malformed_outer_json() {
+        let mock_server = MockServer::start().await;
+
+        // Return invalid JSON that doesn't match OllamaResponse struct
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(200).set_body_string("not a json"))
+            .mount(&mock_server)
+            .await;
+
+        let config = VlmConfig {
+            ollama_host: mock_server.uri(),
+            ..VlmConfig::default()
+        };
+        let vision = OllamaVision::new(config);
+        let frame = Frame {
+            id: Ulid::new(),
+            timestamp: chrono::Utc::now(),
+            image_data: vec![],
+            width: 0,
+            height: 0,
+        };
+
+        let result = vision.analyze_frame(&frame).await;
+        assert!(matches!(
+            result,
+            Err(chronos_core::error::ChronosError::Inference(msg)) if msg.contains("Failed to parse Ollama response JSON")
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_analyze_frame_connection_error() {
+        // Use a port that is unlikely to be open
+        let config = VlmConfig {
+            ollama_host: "http://localhost:1".to_string(),
+            ..VlmConfig::default()
+        };
+        let vision = OllamaVision::new(config);
+        let frame = Frame {
+            id: Ulid::new(),
+            timestamp: chrono::Utc::now(),
+            image_data: vec![],
+            width: 0,
+            height: 0,
+        };
+
+        let result = vision.analyze_frame(&frame).await;
+        assert!(matches!(
+            result,
+            Err(chronos_core::error::ChronosError::Inference(_))
+        ));
     }
 }
