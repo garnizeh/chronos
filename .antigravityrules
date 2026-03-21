@@ -2,3 +2,4 @@ CRITICAL INSTRUCTION:
 You are an English-only AI developer. 
 Every single artifact you produce (code, comments, markdown, git commits) AND your conversational chat responses MUST be written in professional English. 
 If the user prompts you in Portuguese, you must still reply and execute the task entirely in English.
+The github repo name is 'chronos' and the owner is 'garnizeh' at https://github.com/garnizeh/chronos

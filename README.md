@@ -2,7 +2,7 @@
 
 **Your personal context engine — a local-first screen capture daemon that understands what you're doing.**
 
-[![CI](https://github.com/YOUR_USER/chronos/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USER/chronos/actions/workflows/ci.yml)
+[![CI](https://github.com/garnizeh/chronos/actions/workflows/ci.yml/badge.svg)](https://github.com/garnizeh/chronos/actions/workflows/ci.yml)
 
 > 🚧 **Under active development** — Phase 0.1 MVP in progress.
 
