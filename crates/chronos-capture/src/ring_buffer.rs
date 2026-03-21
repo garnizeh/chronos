@@ -9,6 +9,18 @@ use std::sync::{Arc, Mutex};
 /// heap management, we use `Arc<Frame>` (Atomic Reference Count). This ensures that
 /// image data isn't copied when moving between threads, similar to how Go handles
 /// pointers to large structs under the hood.
+/// **Thread-Safety & Locking Strategy:**
+/// Methods like `push` and `latest` use `self.buffer.lock().unwrap()`. 
+/// Using `unwrap()` here is an **intentional design choice**: if a thread panics
+/// while holding the lock, the `Mutex` becomes "poisoned."
+///
+/// In this high-frequency capture context, a poisoned buffer represents an 
+/// unrecoverable internal state. We prefer a clean panic (failing fast) over 
+/// attempting to operate on potentially corrupted data. 
+///
+/// *Callers should note:* If recovery is required, one could use `lock().map_err()` 
+/// or `PoisonError::into_inner()` to attempt to retrieve the data, but for 
+/// Chronos, we treat this as a fatal system failure.
 #[derive(Clone)]
 pub struct FrameRingBuffer {
     buffer: Arc<Mutex<VecDeque<Arc<Frame>>>>,
