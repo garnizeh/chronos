@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.4.0...chronos-daemon-v0.5.0) (2026-03-21)
+
+
+### Features
+
+* **chronos-capture:** achieve 100% logic coverage with mocks ([3d98c6f](https://github.com/garnizeh/chronos/commit/3d98c6f39610d00bb0f28446c07693d299b1cdee))
+
 ## [0.4.0](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.3.0...chronos-daemon-v0.4.0) (2026-03-21)
 
 
