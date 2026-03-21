@@ -2,7 +2,7 @@
 
 > **Source of truth:** [`docs/design/0001-chronos-personal-context-engine.md`](../design/0001-chronos-personal-context-engine.md)  
 > **Prompt spec:** [`docs/prompt/0001-phase-01-mvp.md`](../prompt/0001-phase-01-mvp.md)  
-> **Status:** Draft — awaiting review
+> **Status:** In Progress — Phase 0 ✅ complete
 
 ---
 
@@ -102,7 +102,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ---
 
-### Phase 0: Repository Bootstrapping
+### Phase 0: Repository Bootstrapping ✅
 
 **Goal:** Initialise the git repository, create foundational project files (README, LICENSE, .gitignore), and set up a minimal GitHub Actions CI pipeline so that every future phase is automatically validated on push.
 
@@ -112,20 +112,21 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **0.1** Initialise git repository: `git init`
-- [ ] **0.2** Create `.gitignore` — standard Rust ignores plus project-specific entries:
+- [x] **0.1** Initialise git repository: `git init`
+- [x] **0.2** Create `.gitignore` — standard Rust ignores plus project-specific entries:
   - `/target` — build artefacts
   - `*.swp`, `*.swo` — editor temp files
   - `.env` — local environment overrides
   - `*.db`, `*.db-journal` — SQLite files (never committed)
-- [ ] **0.3** Create `LICENSE` — MIT license (or user-chosen license)
-- [ ] **0.4** Create `README.md` with initial content:
+- [x] **0.3** Create `LICENSE` — MIT license
+- [x] **0.4** Create `README.md` with initial content:
   - Project name and one-line description
   - Privacy statement: *"100% local-first. All AI inference runs on your machine via Ollama. No data ever leaves localhost."*
-  - Status badge placeholder for CI
+  - CI badge (GitHub Actions) + CodeRabbit reviews badge
   - "Under construction" notice
   - Link to design document
-- [ ] **0.5** Create `.github/workflows/ci.yml` — GitHub Actions CI pipeline:
+  - Prerequisites: Rust 1.94+, Cargo 1.94+, Ollama 0.17.4+
+- [x] **0.5** Create `.github/workflows/ci.yml` — GitHub Actions CI pipeline:
   - **Triggers:** `push` to `main`, all `pull_request`s
   - **Job: `check`** (runs on `ubuntu-latest`):
     1. Checkout code
@@ -137,40 +138,36 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     7. `cargo llvm-cov --workspace --lcov --output-path lcov.info` (tests + coverage)
     8. Upload `lcov.info` to Codecov (via `codecov/codecov-action@v5`)
   - **Note:** CI will only pass once Phase 1 creates the workspace+crates. Phase 0 intentionally commits this file first so the pipeline exists from day one.
-- [ ] **0.5b** Create `.github/workflows/release.yml` — automated releases via `release-please`:
+- [x] **0.5b** Create `.github/workflows/release.yml` — automated releases via `release-please`:
   - **Triggers:** `push` to `main`
   - **Permissions:** `contents: write`, `pull-requests: write`
-  - Uses `googleapis/release-please-action@v4` with `release-type: rust`
+  - Uses `googleapis/release-please-action@v4` with **manifest-based config**:
+    - `config-file: release-please-config.json` — declares `cargo-workspace` plugin + 4 crate packages
+    - `manifest-file: .release-please-manifest.json` — tracks per-crate versions (all start at `0.0.0`)
   - Parses conventional commits (`feat:`, `fix:`, etc.) to auto-create Release PRs with bumped `Cargo.toml` versions, `CHANGELOG.md`, and GitHub Releases on merge.
-- [ ] **0.5c** Create `.agents/rules/08-conventional-commits.md` — always-on agent rule enforcing:
+- [x] **0.5c** Create `.agents/rules/08-conventional-commits.md` — always-on agent rule enforcing:
   - Conventional commit format (`<type>(<scope>): <description>`)
   - Allowed types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `perf`, `ci`
   - Breaking change syntax (`feat!:` or `BREAKING CHANGE:` footer)
   - Scope convention: use crate name (e.g., `feat(chronos-core): ...`)
   - Examples of good and bad commit messages
-- [ ] **0.6** Initial commit:
-  ```bash
-  git add -A
-  git commit -m "chore: bootstrap repository (phase 0)
-
-  - README.md with project description and privacy statement
-  - MIT LICENSE
-  - .gitignore for Rust project
-  - GitHub Actions CI pipeline (cargo fmt/clippy/test)
-  - Existing docs/ and .agents/ directories"
-  ```
+- [x] **0.5d** *(bonus)* Create `.github/workflows/auto-author-assign.yml` — auto-assigns PR author on open/reopen
+- [x] **0.6** Initial commit + subsequent commits:
+  - `chore: bootstrap repository (phase 0)` — README, LICENSE, .gitignore, CI, docs, .agents
+  - Follow-up commits: CI badge fix, version requirements, release-please manifest config, CodeRabbit badge
 
 > **Go parallel:** This is equivalent to `go mod init` + creating your `Makefile` with `lint`, `test`, `vet` targets, plus wiring up CI. The key insight: committing CI _before_ any code means every Pull Request is validated from PR #1.
 
-**Acceptance Criteria:**
-- `git log` shows at least one commit
-- `.gitignore`, `LICENSE`, `README.md` exist at the repo root
-- `.github/workflows/ci.yml` exists with fmt + clippy + coverage + codecov upload
-- `.github/workflows/release.yml` exists with release-please (`release-type: rust`)
-- `.agents/rules/08-conventional-commits.md` exists with always-on trigger
-- `git status` is clean (no untracked files)
+**Acceptance Criteria:** ✅ All met
+- ✅ `git log` shows 8 commits
+- ✅ `.gitignore`, `LICENSE`, `README.md` exist at the repo root
+- ✅ `.github/workflows/ci.yml` exists with fmt + clippy + coverage + codecov upload
+- ✅ `.github/workflows/release.yml` exists with release-please (manifest-based config + `cargo-workspace` plugin)
+- ✅ `release-please-config.json` + `.release-please-manifest.json` exist at the repo root
+- ✅ `.agents/rules/08-conventional-commits.md` exists with always-on trigger
+- ✅ `git status` is clean (no untracked files)
 
-**✋ Pause Point — Wait for user review before proceeding to Phase 1.**
+**✅ Phase 0 complete — Reviewed 2025-03-20. Proceeding to Phase 1.**
 
 ---
 
