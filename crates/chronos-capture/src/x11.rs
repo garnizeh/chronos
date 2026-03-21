@@ -50,54 +50,32 @@ impl X11Capture {
                     break;
                 }
 
-                match Monitor::all() {
-                    Ok(monitors) => {
-                        if let Some(primary) = monitors.first() {
-                            match primary.capture_image() {
-                                Ok(image) => {
-                                    let width = image.width();
-                                    let height = image.height();
+                if let Ok(monitors) = Monitor::all()
+                    && let Some(primary) = monitors.first()
+                    && let Ok(image) = primary.capture_image()
+                {
+                    let width = image.width();
+                    let height = image.height();
 
-                                    // Encode to PNG purely in RAM (no SSD wear/tear - Architecture Rule)
-                                    let mut buffer = Vec::new();
-                                    if let Err(e) = image.write_to(
-                                        &mut Cursor::new(&mut buffer),
-                                        image::ImageFormat::Png,
-                                    ) {
-                                        tracing::error!(
-                                            "Failed to encode PNG in capture loop: {}",
-                                            e
-                                        );
-                                    } else {
-                                        let frame = Frame {
-                                            id: Ulid::new(),
-                                            timestamp: Utc::now(),
-                                            image_data: buffer,
-                                            width,
-                                            height,
-                                        };
+                    // Encode to PNG purely in RAM (no SSD wear/tear - Architecture Rule)
+                    let mut buffer = Vec::new();
+                    if image
+                        .write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)
+                        .is_ok()
+                    {
+                        let frame = Frame {
+                            id: Ulid::new(),
+                            timestamp: Utc::now(),
+                            image_data: buffer,
+                            width,
+                            height,
+                        };
 
-                                        // Send the frame to the async world.
-                                        // Provide back-pressure by handling blocked/closed channels.
-                                        if let Err(e) = tx.blocking_send(frame) {
-                                            tracing::error!(
-                                                "Failed to send frame through channel (receiver likely closed): {}",
-                                                e
-                                            );
-                                            break;
-                                        }
-                                    }
-                                }
-                                Err(e) => {
-                                    tracing::error!("Failed to capture image from X11: {}", e);
-                                }
-                            }
-                        } else {
-                            tracing::error!("No primary monitor detected for screen capture");
+                        // Send the frame to the async world.
+                        // Provide back-pressure by handling blocked/closed channels.
+                        if tx.blocking_send(frame).is_err() {
+                            break;
                         }
-                    }
-                    Err(e) => {
-                        tracing::error!("Failed to enumerate monitors via xcap: {}", e);
                     }
                 }
 
