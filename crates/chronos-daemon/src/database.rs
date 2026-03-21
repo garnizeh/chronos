@@ -36,10 +36,11 @@ impl Database {
 
     /// Create an in-memory database for testing purposes.
     /// Useful for isolated, fast integration tests.
-    /// Using a shared cache ensure all pool connections see the same data.
+    /// Using a unique shared cache URI ensures each call gets an isolated database.
     pub async fn new_in_memory() -> Result<Self, chronos_core::error::ChronosError> {
-        // sqlx uses ":memory:" for in-memory SQLite, but shared cache is better for pools
-        Self::new("sqlite:file::memory:?mode=memory&cache=shared").await
+        let unique_id = ulid::Ulid::new().to_string();
+        let url = format!("sqlite:file:{}?mode=memory&cache=shared", unique_id);
+        Self::new(&url).await
     }
 
     /// Insert a new SemanticLog into the database.
