@@ -8,7 +8,7 @@ This workflow must be executed whenever a granular task (e.g., "Task 2.1: Implem
 
 ## 1. Commit Code Changes
 Before updating any documentation, ensure that the functional code changes for the task are safely persisted.
-- Stage all files: `git add .`
+- Stage only task files: `git add <path/to/task-files>` or use interactive patching `git add -p` to prevent staging unrelated changes.
 - Determine the appropriate Conventional Commit message as defined at the bottom of the detailed task document.
 - Execute the commit: `git commit -m "<conventional-commit-message>"`
 - **Strict Adherence:** This guarantees compliance with the rule that every single task must have its own isolated commit before the next task begins.
