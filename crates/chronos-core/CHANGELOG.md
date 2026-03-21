@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/garnizeh/chronos/compare/chronos-core-v0.4.0...chronos-core-v0.5.0) (2026-03-21)
+
+
+### Features
+
+* **chronos-daemon:** implement pipeline integration (Capture -&gt; Vision -&gt; DB) ([bb69a1f](https://github.com/garnizeh/chronos/commit/bb69a1ffe714f146438a1805510df40d96e80fff))
+
 ## [0.4.0](https://github.com/garnizeh/chronos/compare/chronos-core-v0.3.0...chronos-core-v0.4.0) (2026-03-21)
 
 

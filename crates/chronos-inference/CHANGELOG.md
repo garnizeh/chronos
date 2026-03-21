@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.4.1](https://github.com/garnizeh/chronos/compare/chronos-inference-v0.4.0...chronos-inference-v0.4.1) (2026-03-21)
+
 ## [0.4.0](https://github.com/garnizeh/chronos/compare/chronos-inference-v0.3.0...chronos-inference-v0.4.0) (2026-03-21)
 
 

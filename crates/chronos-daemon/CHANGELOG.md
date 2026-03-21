@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.5.1...chronos-daemon-v0.6.0) (2026-03-21)
+
+
+### Features
+
+* **chronos-daemon:** implement pipeline integration (Capture -&gt; Vision -&gt; DB) ([bb69a1f](https://github.com/garnizeh/chronos/commit/bb69a1ffe714f146438a1805510df40d96e80fff))
+* **chronos-daemon:** refine pipeline resilience and sync task docs ([b8d5419](https://github.com/garnizeh/chronos/commit/b8d54191f216bdf0e3f985216be4c70c9312d30f))
+
 ## [0.5.1](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.5.0...chronos-daemon-v0.5.1) (2026-03-21)
 
 ## [0.5.0](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.4.0...chronos-daemon-v0.5.0) (2026-03-21)
