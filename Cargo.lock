@@ -458,7 +458,7 @@ dependencies = [
 
 [[package]]
 name = "chronos-capture"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chronos-core",
  "tokio",
@@ -467,7 +467,7 @@ dependencies = [
 
 [[package]]
 name = "chronos-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -480,7 +480,7 @@ dependencies = [
 
 [[package]]
 name = "chronos-daemon"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chronos-capture",
  "chronos-core",
@@ -492,7 +492,7 @@ dependencies = [
 
 [[package]]
 name = "chronos-inference"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64",
  "chronos-core",
