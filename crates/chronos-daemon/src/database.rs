@@ -14,6 +14,10 @@ impl Database {
     /// This also runs any pending migrations automatically.
     pub async fn new(url: &str) -> Result<Self, chronos_core::error::ChronosError> {
         let pool = SqlitePoolOptions::new()
+            // TODO(provisional): Using 5 connections for SQLite.
+            // Rationale: Keeps resource footprint low for a background daemon while allowing concurrent CLI queries.
+            // Trigger: Scaling to 10+ concurrent dashboard users or heavy background analytics.
+            // Direction: Move to a config-based pool size or dynamic adjustment.
             .max_connections(5)
             .connect(url)
             .await
