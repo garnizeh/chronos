@@ -577,6 +577,8 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ### Step 7: Pipeline Integration (Daemon)
 
+> 📋 **Detailed tasks:** [`tasks-step-7-pipeline-integration/`](tasks-step-7-pipeline-integration/)
+
 **Goal:** Wire the full pipeline: Capture → Vision → Database. Implement the main async loop in the daemon crate that receives frames from a channel, sends them to the VLM, and stores results in SQLite. (See Design §3.A, §5.B)
 
 **Depends on:** Steps 4, 5, and 6 complete
