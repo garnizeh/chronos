@@ -7,21 +7,21 @@ Implement a thread-safe, bounded ring buffer to store captured screen frames and
 This is conceptually similar to a buffered channel in Go `make(chan Frame, capacity)` combined with a standard slice. However, when a Go channel is full, pushing blocks. For Chronos, we explicitly want to *drop the oldest frame* to maintain real-time performance without boundless memory growth. This is like a fixed-size `container/ring` combined with lock-free semantics or explicit `sync.Mutex`.
 
 ## Implementation Steps
-- [ ] Create `crates/chronos-capture/src/ring_buffer.rs`.
-- [ ] Define the `FrameRingBuffer` struct wrapping a `std::collections::VecDeque<Frame>` and a `usize` capacity.
-- [ ] Implement `new(capacity: usize) -> Self`.
-- [ ] Implement `push(&mut self, frame: Frame)`:
+- [x] Create `crates/chronos-capture/src/ring_buffer.rs`.
+- [x] Define the `FrameRingBuffer` struct wrapping a `std::collections::VecDeque<Frame>` and a `usize` capacity.
+- [x] Implement `new(capacity: usize) -> Self`.
+- [x] Implement `push(&mut self, frame: Frame)`:
   - If `len() == capacity`, call `pop_front()` to drop the oldest.
   - Call `push_back(frame)`.
-- [ ] Implement `len(&self) -> usize` and `is_empty(&self) -> bool`.
-- [ ] Implement `latest(&self) -> Option<&Frame>` returning `back()`.
-- [ ] Write `#[cfg(test)]` block in the same file:
-  - [ ] `test_push_within_capacity`
-  - [ ] `test_push_drops_oldest_when_full`
-  - [ ] `test_latest_returns_most_recent`
-  - [ ] `test_empty_buffer`
-- [ ] Run `cargo test -p chronos-capture`.
-- [ ] Run `cargo clippy -p chronos-capture -- -D warnings`.
+- [x] Implement `len(&self) -> usize` and `is_empty(&self) -> bool`.
+- [x] Implement `latest(&self) -> Option<&Frame>` returning `back()`.
+- [x] Write `#[cfg(test)]` block in the same file:
+  - [x] `test_push_within_capacity`
+  - [x] `test_push_drops_oldest_when_full`
+  - [x] `test_latest_returns_most_recent`
+  - [x] `test_empty_buffer`
+- [x] Run `cargo test -p chronos-capture`.
+- [x] Run `cargo clippy -p chronos-capture -- -D warnings`.
 
 ## Code Scaffolding
 ```rust
