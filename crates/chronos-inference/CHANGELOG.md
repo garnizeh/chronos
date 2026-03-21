@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/garnizeh/chronos/compare/chronos-inference-v0.3.0...chronos-inference-v0.4.0) (2026-03-21)
+
+
+### Features
+
+* **chronos-inference:** add wiremock for 100% pragmatic coverage ([3ff1b8d](https://github.com/garnizeh/chronos/commit/3ff1b8d872af69ddc44f39b26101da5e592a6ddc))
+* **chronos-inference:** implement OllamaVision client and VisionInference trait ([4492d7a](https://github.com/garnizeh/chronos/commit/4492d7a0520cad22adc737031fb6205e7d40361b))
+
 ## [0.3.0](https://github.com/garnizeh/chronos/compare/chronos-inference-v0.2.1...chronos-inference-v0.3.0) (2026-03-21)
 
 
