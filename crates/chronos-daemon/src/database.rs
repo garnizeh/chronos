@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use chronos_core::models::SemanticLog;
-use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::SqlitePool;
+use sqlx::sqlite::SqlitePoolOptions;
 
 /// The Database struct encapsulates the SQLite connection pool.
 /// In Go, this would be equivalent to a struct holding a `*sql.DB`.
@@ -42,8 +42,10 @@ impl Database {
         &self,
         log: &SemanticLog,
     ) -> Result<(), chronos_core::error::ChronosError> {
-        let key_entities_json = serde_json::to_string(&log.key_entities)
-            .map_err(|e: serde_json::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
+        let key_entities_json =
+            serde_json::to_string(&log.key_entities).map_err(|e: serde_json::Error| {
+                chronos_core::error::ChronosError::Database(e.to_string())
+            })?;
 
         sqlx::query(
             "INSERT INTO semantic_logs (
@@ -141,17 +143,19 @@ impl TryFrom<SemanticLogRow> for SemanticLog {
 
     fn try_from(row: SemanticLogRow) -> std::result::Result<Self, Self::Error> {
         Ok(Self {
-            id: row
-                .id
-                .parse()
-                .map_err(|e| chronos_core::error::ChronosError::Database(format!("Invalid ID: {}", e)))?,
+            id: row.id.parse().map_err(|e| {
+                chronos_core::error::ChronosError::Database(format!("Invalid ID: {}", e))
+            })?,
             timestamp: DateTime::parse_from_rfc3339(&row.timestamp)
                 .map_err(|e| {
                     chronos_core::error::ChronosError::Database(format!("Invalid timestamp: {}", e))
                 })?
                 .with_timezone(&Utc),
             source_frame_id: row.source_frame_id.parse().map_err(|e| {
-                chronos_core::error::ChronosError::Database(format!("Invalid source_frame_id: {}", e))
+                chronos_core::error::ChronosError::Database(format!(
+                    "Invalid source_frame_id: {}",
+                    e
+                ))
             })?,
             description: row.description,
             active_application: row.active_application,
