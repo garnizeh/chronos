@@ -131,6 +131,11 @@ set shell := ["bash", "-c"]
     cargo llvm-cov nextest --workspace --lcov --output-path lcov.info
     echo "Coverage report generated at lcov.info"
 
+# Generate and open HTML coverage report locally
+@coverage-html:
+    echo "Generating HTML coverage report..."
+    cargo llvm-cov nextest --workspace --html --open
+
 # Verify that the code compiles with the declared MSRV (1.94)
 @msrv:
     rustup toolchain list | grep -q "1.94" || rustup toolchain install 1.94
