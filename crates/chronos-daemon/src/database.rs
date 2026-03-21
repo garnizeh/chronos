@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
 use chronos_core::models::SemanticLog;
 use sqlx::SqlitePool;
-use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use std::str::FromStr;
 
 /// The Database struct encapsulates the SQLite connection pool.
 /// In Go, this would be equivalent to a struct holding a `*sql.DB`.
@@ -13,13 +14,17 @@ impl Database {
     /// Create a new Database instance connecting to the given URL.
     /// This also runs any pending migrations automatically.
     pub async fn new(url: &str) -> Result<Self, chronos_core::error::ChronosError> {
+        let options = SqliteConnectOptions::from_str(url)
+            .map_err(|e| chronos_core::error::ChronosError::Database(e.to_string()))?
+            .create_if_missing(true);
+
         let pool = SqlitePoolOptions::new()
             // TODO(provisional): Using 5 connections for SQLite.
             // Rationale: Keeps resource footprint low for a background daemon while allowing concurrent CLI queries.
             // Trigger: Scaling to 10+ concurrent dashboard users or heavy background analytics.
             // Direction: Move to a config-based pool size or dynamic adjustment.
             .max_connections(5)
-            .connect(url)
+            .connect_with(options)
             .await
             .map_err(|e: sqlx::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
 
