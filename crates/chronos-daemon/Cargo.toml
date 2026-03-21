@@ -12,7 +12,12 @@ chronos-capture = { path = "../chronos-capture" }
 chronos-inference = { path = "../chronos-inference" }
 tokio = { version = "1.50.0", features = ["full"] }
 sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite", "migrate"] }
+async-trait = "0.1.89"
 clap = { version = "4.6.0", features = ["derive"] }
 serde_json = "1.0.149"
 chrono = { version = "0.4.44", features = ["serde"] }
 ulid = "1.2.1"
+tracing = "0.1"
+
+[dev-dependencies]
+chronos-core = { path = "../chronos-core", features = ["mocks"] }
