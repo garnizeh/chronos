@@ -15,9 +15,8 @@ Before generating any new documents or writing code, isolate the new phase of wo
 ## 2. Generate Detailed Task Documents (If Missing)
 Review the core goal of the new Step from the parent roadmap (`docs/roadmap/0001-milestone-01-mvp-roadmap.md`).
 - If granular task breakdowns **do NOT exist** yet:
-  - Create a new directory: `docs/roadmap/tasks-step-<number>-<slug>/`.
-  - Generate separated markdown files for each task (e.g., `01-feature-a.md`, `02-feature-b.md`).
-  - Ensure every generated task file strictly specifies TDD requirements, didactic context (Rust vs Go), and includes the `⚠️ CRITICAL RULE` forcing isolated conventional commits.
+  - Execute the **`/07-create-tasks`** workflow exclusively to generate these tasks.
+  - The `/07-create-tasks` logic will automatically handle creating the isolated folder, enforcing TDD boundaries, embedding didactic reasoning, and placing the `⚠️ CRITICAL RULE` for committing code.
   
 ## 3. Synchronize State Tracking
 - Update the main roadmap document to reflect the new state (e.g., mark the new Step as `In Progress` in the header).
