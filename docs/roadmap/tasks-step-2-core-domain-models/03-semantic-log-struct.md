@@ -2,7 +2,7 @@
 
 **Objective:** Define the `SemanticLog` struct which represents the structured output from the Vision-Language Model (VLM).
 
-**Mental Map / Go Parallel:** Like a Go struct with `json:"..."` tags, we rely on `serde` `Serialize` and `Deserialize` to convert this struct to and from JSON, which makes mapping it to HTTP requested JSON or SQLite columns seamless.
+**Mental Map / Go Parallel:** Like a Go struct with `json:"..."` tags, we rely on serde's `Serialize` and `Deserialize` to convert this struct to and from JSON, making mapping to HTTP request JSON payloads or SQLite columns seamless.
 
 **Implementation Steps:**
 - [x] Append to `crates/chronos-core/src/models.rs`.
