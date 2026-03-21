@@ -50,7 +50,7 @@ impl FrameRingBuffer {
     /// threads to push concurrently.
     pub fn push(&self, frame: Frame) {
         let mut guard = self.buffer.lock().unwrap();
-        if guard.len() == self.capacity {
+        while guard.len() >= self.capacity {
             guard.pop_front();
         }
         guard.push_back(Arc::new(frame));
@@ -73,6 +73,12 @@ impl FrameRingBuffer {
     pub fn latest(&self) -> Option<Arc<Frame>> {
         let guard = self.buffer.lock().unwrap();
         guard.back().cloned()
+    }
+
+    /// Returns a snapshot of all frames currently in the buffer.
+    pub fn to_vec(&self) -> Vec<Arc<Frame>> {
+        let guard = self.buffer.lock().unwrap();
+        guard.iter().cloned().collect()
     }
 }
 
@@ -113,14 +119,21 @@ mod tests {
         let frame2 = create_dummy_frame(200);
         let frame3 = create_dummy_frame(300); // This should evict frame1
 
-        rb.push(frame1.clone());
-        rb.push(frame2.clone());
-        rb.push(frame3.clone());
+        rb.push(frame1);
+        rb.push(frame2);
+        rb.push(frame3);
 
         assert_eq!(rb.len(), 2, "Capacity should not exceed 2");
 
-        let latest = rb.latest().expect("Buffer should not be empty");
-        assert_eq!(latest.width, 300, "Latest frame should be frame3");
+        let frames = rb.to_vec();
+        assert_eq!(frames.len(), 2);
+        
+        // The frames remaining should be frame2 and frame3
+        assert_eq!(frames[0].width, 200, "Oldest should now be frame2");
+        assert_eq!(frames[1].width, 300, "Newest should be frame3");
+        
+        // Explicitly verify frame1 is gone
+        assert!(frames.iter().all(|f| f.width != 100), "frame1 should have been evicted");
     }
 
     #[test]

@@ -19,13 +19,18 @@ use xcap::Monitor;
 /// `tokio::task::spawn_blocking` (for one-offs) or `std::thread::spawn`
 /// (for an infinite loop).
 pub struct X11Capture {
-    pub config: CaptureConfig,
+    config: CaptureConfig,
 }
 
 impl X11Capture {
     /// Creates a new capture instance with the given configuration.
     pub fn new(config: CaptureConfig) -> Self {
         Self { config }
+    }
+
+    /// Returns a reference to the capture configuration.
+    pub fn config(&self) -> &CaptureConfig {
+        &self.config
     }
 
     /// Spawns a dedicated OS thread to capture the screen at the configured interval.
@@ -158,9 +163,9 @@ mod tests {
 
         // Didactic note: in tests without hardware boundaries,
         // asserting simple configurations isolates logic from external dependencies.
-        assert_eq!(capture.config.interval_seconds, config.interval_seconds);
+        assert_eq!(capture.config().interval_seconds, config.interval_seconds);
         assert_eq!(
-            capture.config.ring_buffer_capacity,
+            capture.config().ring_buffer_capacity,
             config.ring_buffer_capacity
         );
     }
