@@ -18,7 +18,7 @@ This is your `database/sql` pattern. `sqlx` provides a `Pool<Sqlite>` which is t
     - [x] Create connection pool using `SqlitePoolOptions`.
     - [x] Run migrations using `sqlx::migrate!().run(&pool).await`.
   - [x] Implement `Database::new_in_memory() -> Result<Self>` for testing.
-- [x] Add `sqlx` with `sqlite` and `runtime-tokio` features to `chronos-daemon/Cargo.toml`.
+- [x] Add `sqlx` with `sqlite`, `runtime-tokio`, and `migrate` features to `chronos-daemon/Cargo.toml`.
 - [x] Add `chronos-core` as a dependency to access `Result` and `ChronosError`.
 
 ## Code Scaffolding
