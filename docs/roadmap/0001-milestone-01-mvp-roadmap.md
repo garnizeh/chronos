@@ -338,7 +338,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **3.1** Create `crates/chronos-core/src/traits.rs`:
+- [x] **3.1** Create `crates/chronos-core/src/traits.rs`:
   - `ImageCapture` trait:
     ```rust
     /// The screen capture abstraction.
@@ -365,7 +365,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - Add `async-trait = "0.1"` dependency to `chronos-core/Cargo.toml`
   - **Note:** `Send + Sync` bounds are required because these traits cross async task boundaries. In Go, interfaces are implicitly goroutine-safe; in Rust, we must declare it.
 
-- [ ] **3.2** Add mock implementations in the same file (behind `#[cfg(test)]` or public for integration tests):
+- [x] **3.2** Add mock implementations in the same file (behind `#[cfg(test)]` or public for integration tests):
   - `MockCapture`:
     ```rust
     /// A test double that returns a static 1x1 pixel PNG.
@@ -409,7 +409,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     }
     ```
 
-- [ ] **3.3** Write tests (`#[cfg(test)]` in `traits.rs`):
+- [x] **3.3** Write tests (`#[cfg(test)]` in `traits.rs`):
   - `test_mock_capture_returns_frame` — verify MockCapture produces a valid Frame with PNG magic bytes
   - `test_mock_vision_returns_semantic_log` — verify MockVision produces a valid SemanticLog with expected fields
   - `test_mock_vision_preserves_frame_id` — verify `source_frame_id` matches the input frame's `id`
@@ -418,9 +418,9 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
   > **Go parallel:** These tests are equivalent to testing a Go interface with a stub implementation. The `Box<dyn Trait>` test proves Rust's dynamic dispatch works like Go's implicit interface satisfaction.
 
-- [ ] **3.4** Update `crates/chronos-core/src/lib.rs` to export `traits` module
-- [ ] **3.5** Run: `cargo test -p chronos-core`
-- [ ] **3.6** Run: `cargo clippy -p chronos-core -- -D warnings`
+- [x] **3.4** Update `crates/chronos-core/src/lib.rs` to export `traits` module
+- [x] **3.5** Run: `cargo test -p chronos-core`
+- [x] **3.6** Run: `cargo clippy -p chronos-core -- -D warnings`
 
 **Acceptance Criteria:**
 - Both traits compile with `async_trait`
