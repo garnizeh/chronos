@@ -35,6 +35,13 @@ impl OllamaVision {
     /// Create a new OllamaVision client from configuration.
     /// Sets the HTTP timeout based on VLM configuration.
     pub fn new(config: VlmConfig) -> Result<Self> {
+        // Validate timeout
+        if config.timeout_seconds == 0 {
+            return Err(chronos_core::error::ChronosError::Config(
+                "VLM timeout_seconds must be greater than zero".to_string(),
+            ));
+        }
+
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(config.timeout_seconds))
             .build()
@@ -55,7 +62,9 @@ impl OllamaVision {
     /// If not, it falls back to using the entire text as a description with low confidence.
     fn parse_vlm_response(raw: &str) -> VlmJsonResponse {
         // Try to parse as JSON first
-        if let Ok(json) = serde_json::from_str::<VlmJsonResponse>(raw) {
+        if let Ok(mut json) = serde_json::from_str::<VlmJsonResponse>(raw) {
+            // Normalize confidence score to 0.0..=1.0
+            json.confidence_score = json.confidence_score.clamp(0.0, 1.0);
             return json;
         }
 
@@ -65,7 +74,7 @@ impl OllamaVision {
             active_application: None,
             activity_category: None,
             key_entities: Vec::new(),
-            confidence_score: 0.3, // Low confidence for unstructured fallback
+            confidence_score: 0.3, // Already within 0.0..=1.0
         }
     }
 }
@@ -161,6 +170,19 @@ mod tests {
     }
 
     #[test]
+    fn test_ollama_vision_invalid_timeout() {
+        let config = VlmConfig {
+            timeout_seconds: 0,
+            ..VlmConfig::default()
+        };
+        let result = OllamaVision::new(config);
+        assert!(matches!(
+            result,
+            Err(chronos_core::error::ChronosError::Config(msg)) if msg.contains("timeout_seconds must be greater than zero")
+        ));
+    }
+
+    #[test]
     fn test_parse_valid_vlm_json() {
         let raw = r#"{
             "description": "User is writing Rust code",
@@ -199,6 +221,25 @@ mod tests {
         assert_eq!(parsed.active_application, None);
         assert!(parsed.key_entities.is_empty());
         assert_eq!(parsed.confidence_score, 0.5);
+    }
+
+    #[test]
+    fn test_parse_vlm_json_confidence_clamping() {
+        // Test clamping upper bound
+        let raw_high = r#"{
+            "description": "High confidence",
+            "confidence_score": 1.5
+        }"#;
+        let parsed_high = OllamaVision::parse_vlm_response(raw_high);
+        assert_eq!(parsed_high.confidence_score, 1.0);
+
+        // Test clamping lower bound
+        let raw_low = r#"{
+            "description": "Negative confidence",
+            "confidence_score": -0.5
+        }"#;
+        let parsed_low = OllamaVision::parse_vlm_response(raw_low);
+        assert_eq!(parsed_low.confidence_score, 0.0);
     }
 
     #[tokio::test]
