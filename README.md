@@ -3,7 +3,8 @@
 **Your personal context engine — a local-first screen capture daemon that understands what you're doing.**
 
 [![CI](https://github.com/garnizeh/chronos/actions/workflows/ci.yml/badge.svg)](https://github.com/garnizeh/chronos/actions/workflows/ci.yml)
-[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/garnizeh/chronos?utm_source=oss&utm_medium=github&utm_campaign=garnizeh%2Fchronos&labelColor=171717&color=FF570A&label=CodeRabbit+Reviews)](https://coderabbit.ai/reviews/github/garnizeh/chronos)
+[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/garnizeh/chronos?utm_source=oss&utm_medium=github&utm_campaign=garnizeh%2Fchronos&labelColor=171717&color=FF570A&label=CodeRabbit+Reviews)](https://coderabbit.ai)
+[![codecov](https://codecov.io/gh/garnizeh/chronos/graph/badge.svg?token=UG4S5JZMDI)](https://codecov.io/gh/garnizeh/chronos)
 
 > 🚧 **Under active development** — Phase 0.1 MVP in progress.
 
