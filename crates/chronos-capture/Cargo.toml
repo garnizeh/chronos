@@ -10,7 +10,7 @@ license.workspace = true
 chronos-core = { path = "../chronos-core" }
 xcap = "0.9.2"
 tokio = { version = "1.50.0", features = ["rt", "sync"] }
-image = "0.25.10"
+image = { version = "0.25.10", default-features = false, features = ["png"] }
 async-trait = "0.1.89"
 chrono = "0.4.44"
 ulid = "1.2.1"
