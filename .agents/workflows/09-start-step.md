@@ -9,7 +9,7 @@ This workflow controls the overarching transition from one completed Step (e.g.,
 ## 1. Environment & Branch Isolation
 Before generating any new documents or writing code, isolate the new phase of work:
 - Checkout the main branch: `git checkout main`.
-- Merge the previous step's branch into main (if not already merged).
+- Merge the previous step's branch into main (if not already merged). Skip if this is Step 1 or no prior branch exists.
 - Create and switch to the new feature branch: `git checkout -b feat/step-<number>-<slug>`.
 
 ## 2. Generate Detailed Task Documents (If Missing)
