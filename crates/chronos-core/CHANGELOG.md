@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/garnizeh/chronos/compare/chronos-core-v0.2.0...chronos-core-v0.3.0) (2026-03-21)
+
+
+### Features
+
+* **chronos-core:** add InvalidInput error and validate database limits ([e7c3625](https://github.com/garnizeh/chronos/commit/e7c3625d7a52368f948db98ecebfb48298886c68))
+
 ## [0.2.0](https://github.com/garnizeh/chronos/compare/chronos-core-v0.1.0...chronos-core-v0.2.0) (2026-03-21)
 
 

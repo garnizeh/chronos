@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.2.1](https://github.com/garnizeh/chronos/compare/chronos-capture-v0.2.0...chronos-capture-v0.2.1) (2026-03-21)
+
 ## [0.2.0](https://github.com/garnizeh/chronos/compare/chronos-capture-v0.1.0...chronos-capture-v0.2.0) (2026-03-21)
 
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.2.0...chronos-daemon-v0.3.0) (2026-03-21)
+
+
+### Features
+
+* **chronos-core:** add InvalidInput error and validate database limits ([e7c3625](https://github.com/garnizeh/chronos/commit/e7c3625d7a52368f948db98ecebfb48298886c68))
+* **chronos-daemon:** implement sqlite database layer for semantic logs ([f2ca3d9](https://github.com/garnizeh/chronos/commit/f2ca3d96ce2cadd6d4933707a60f1fe9adf0b993))
+* **database:** add CHECK constraint for confidence_score and verify with tests ([1004889](https://github.com/garnizeh/chronos/commit/10048899ef07e003e83827a35f6583588985a4f8))
+
+
+### Bug Fixes
+
+* **chronos-daemon:** repair corrupted database.rs and improve in-memory pool ([b7b18b7](https://github.com/garnizeh/chronos/commit/b7b18b7a0fd77bae7ac40794c07dea183b1deff4))
+* **chronos-daemon:** use unique in-memory URI for test isolation ([95c218e](https://github.com/garnizeh/chronos/commit/95c218e6bcc7bb61d03ad052efbce6f7b1b90465))
+
 ## [0.2.0](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.1.0...chronos-daemon-v0.2.0) (2026-03-21)
 
 
