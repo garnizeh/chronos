@@ -1,25 +1,25 @@
-# Chronos v0.1 — Phase 0.1 MVP/POC Roadmap & Task Breakdown
+# Chronos v0.1 — Milestone 1: MVP/POC Roadmap & Task Breakdown
 
 > **Source of truth:** [`docs/design/0001-chronos-personal-context-engine.md`](../design/0001-chronos-personal-context-engine.md)  
 > **Prompt spec:** [`docs/prompt/0001-phase-01-mvp.md`](../prompt/0001-phase-01-mvp.md)  
-> **Status:** In Progress — Phase 0 ✅ complete
+> **Status:** In Progress — Step 0 ✅ complete
 
 ---
 
 ## Table of Contents
 
 1. [Workspace Setup](#1-workspace-setup)
-2. [Implementation Phases](#2-implementation-phases)
-   - [Phase 0: Repository Bootstrapping](#phase-0-repository-bootstrapping)
-   - [Phase 1: Workspace Skeleton](#phase-1-workspace-skeleton)
-   - [Phase 2: Core Domain Models](#phase-2-core-domain-models)
-   - [Phase 3: Trait Boundaries & Mocks](#phase-3-trait-boundaries--mocks)
-   - [Phase 4: Database Layer](#phase-4-database-layer)
-   - [Phase 5: Screen Capture (X11)](#phase-5-screen-capture-x11)
-   - [Phase 6: Ollama Vision Client](#phase-6-ollama-vision-client)
-   - [Phase 7: Pipeline Integration (Daemon)](#phase-7-pipeline-integration-daemon)
-   - [Phase 8: CLI](#phase-8-cli)
-   - [Phase 9: Integration & Smoke Test](#phase-9-integration--smoke-test)
+2. [Implementation Steps](#2-implementation-steps)
+   - [Step 0: Repository Bootstrapping](#step-0-repository-bootstrapping)
+   - [Step 1: Workspace Skeleton](#step-1-workspace-skeleton)
+   - [Step 2: Core Domain Models](#step-2-core-domain-models)
+   - [Step 3: Trait Boundaries & Mocks](#step-3-trait-boundaries--mocks)
+   - [Step 4: Database Layer](#step-4-database-layer)
+   - [Step 5: Screen Capture (X11)](#step-5-screen-capture-x11)
+   - [Step 6: Ollama Vision Client](#step-6-ollama-vision-client)
+   - [Step 7: Pipeline Integration (Daemon)](#step-7-pipeline-integration-daemon)
+   - [Step 8: CLI](#step-8-cli)
+   - [Step 9: Integration & Smoke Test](#step-9-integration--smoke-test)
 3. [Verification Matrix](#3-verification-matrix)
 4. [Definition of Done (v0.1)](#4-definition-of-done-v01)
 
@@ -96,13 +96,13 @@ chronos/
 
 ---
 
-## 2. Implementation Phases
+## 2. Implementation Steps
 
 Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Feature TDD Loop` workflow (Step 1 → 4) for every module, and run `/Verify Cargo Workspace` after structural changes.
 
 ---
 
-### Phase 0: Repository Bootstrapping ✅
+### Step 0: Repository Bootstrapping ✅
 
 **Goal:** Initialise the git repository, create foundational project files (README, LICENSE, .gitignore), and set up a minimal GitHub Actions CI pipeline so that every future phase is automatically validated on push.
 
@@ -137,7 +137,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     6. `cargo clippy --workspace --all-targets -- -D warnings`
     7. `cargo llvm-cov --workspace --lcov --output-path lcov.info` (tests + coverage)
     8. Upload `lcov.info` to Codecov (via `codecov/codecov-action@v5`)
-  - **Note:** CI will only pass once Phase 1 creates the workspace+crates. Phase 0 intentionally commits this file first so the pipeline exists from day one.
+  - **Note:** CI will only pass once Step 1 creates the workspace+crates. Step 0 intentionally commits this file first so the pipeline exists from day one.
 - [x] **0.5b** Create `.github/workflows/release.yml` — automated releases via `release-please`:
   - **Triggers:** `push` to `main`
   - **Permissions:** `contents: write`, `pull-requests: write`
@@ -167,15 +167,17 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - ✅ `.agents/rules/08-conventional-commits.md` exists with always-on trigger
 - ✅ `git status` is clean (no untracked files)
 
-**✅ Phase 0 complete — Reviewed 2025-03-20. Proceeding to Phase 1.**
+**✅ Step 0 complete — Reviewed 2025-03-20. Proceeding to Step 1.**
 
 ---
 
-### Phase 1: Workspace Skeleton
+### Step 1: Workspace Skeleton
+
+> 📋 **Detailed tasks:** [`tasks-step-1-workspace-skeleton/`](tasks-step-1-workspace-skeleton/)
 
 **Goal:** Create the cargo workspace with 4 empty crates. Verify that `cargo check --workspace` compiles cleanly.
 
-**Depends on:** Nothing (starting point)
+**Depends on:** Step 0 complete
 
 **Crate(s):** All — workspace root + 4 members
 
@@ -222,15 +224,15 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 > **Go parallel:** This is equivalent to `go mod init` + creating empty `package` files so `go build ./...` works. The `[workspace]` in Cargo.toml is like a Go workspace (`go.work`).
 
-**✋ Pause Point — Wait for user review before proceeding to Phase 2.**
+**✋ Pause Point — Wait for user review before proceeding to Step 2.**
 
 ---
 
-### Phase 2: Core Domain Models
+### Step 2: Core Domain Models
 
 **Goal:** Define all shared data types: `Frame`, `SemanticLog`, `CaptureConfig`, `VlmConfig`, and the domain error enum. Validate with serialization round-trip tests.
 
-**Depends on:** Phase 1 complete
+**Depends on:** Step 1 complete
 
 **Crate(s):** `chronos-core`
 
@@ -318,15 +320,15 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - Default configs return documented values
 - `cargo test -p chronos-core` → all green
 
-**✋ Pause Point — Wait for user review before proceeding to Phase 3.**
+**✋ Pause Point — Wait for user review before proceeding to Step 3.**
 
 ---
 
-### Phase 3: Trait Boundaries & Mocks
+### Step 3: Trait Boundaries & Mocks
 
 **Goal:** Define the `ImageCapture` and `VisionInference` trait abstractions with full mock implementations. This is the decoupling layer that makes the entire system testable without hardware. (See Design §3.A, §6)
 
-**Depends on:** Phase 2 complete
+**Depends on:** Step 2 complete
 
 **Crate(s):** `chronos-core`
 
@@ -422,15 +424,15 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - `Box<dyn ImageCapture>` and `Box<dyn VisionInference>` compile (dynamic dispatch works)
 - No `unwrap()` in any non-test code
 
-**✋ Pause Point — Wait for user review before proceeding to Phase 4.**
+**✋ Pause Point — Wait for user review before proceeding to Step 4.**
 
 ---
 
-### Phase 4: Database Layer
+### Step 4: Database Layer
 
 **Goal:** Set up SQLite persistence via `sqlx`. Create the `semantic_logs` table schema, implement insert/query operations, and verify with in-memory SQLite tests. Follow the `/Local SQLite & SQLx Pipeline` workflow.
 
-**Depends on:** Phase 2 complete (models)
+**Depends on:** Step 2 complete (models)
 
 **Crate(s):** `chronos-daemon` (database module lives here as it's the only binary that touches storage)
 
@@ -495,15 +497,15 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - No `.unwrap()` in non-test code
 - `cargo test -p chronos-daemon` → all green
 
-**✋ Pause Point — Wait for user review before proceeding to Phase 5.**
+**✋ Pause Point — Wait for user review before proceeding to Step 5.**
 
 ---
 
-### Phase 5: Screen Capture (X11)
+### Step 5: Screen Capture (X11)
 
 **Goal:** Implement the `X11Capture` struct that captures the primary monitor via `xcap` on a dedicated OS thread, stores frames in a ring buffer, and bridges to the async world via `tokio::sync::mpsc`. Follow the `/OS & Async Boundary Control` workflow.
 
-**Depends on:** Phase 3 complete (traits)
+**Depends on:** Step 3 complete (traits)
 
 **Crate(s):** `chronos-capture`
 
@@ -554,7 +556,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - **Unit tests (no real X11 needed):**
     - `test_x11_capture_creation` — verify struct construction with default config
     - `test_capture_config_defaults` — verify interval and buffer size defaults
-  - **Note:** Real X11 capture tests require a display server. We rely on `MockCapture` from Phase 3 for pipeline testing. An optional integration test gated behind `#[cfg(feature = "x11-integration")]` can live here for manual verification on a real machine.
+  - **Note:** Real X11 capture tests require a display server. We rely on `MockCapture` from Step 3 for pipeline testing. An optional integration test gated behind `#[cfg(feature = "x11-integration")]` can live here for manual verification on a real machine.
 
 - [ ] **5.4** Update `crates/chronos-capture/src/lib.rs`:
   ```rust
@@ -572,15 +574,15 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - Frame data flows through `mpsc::Sender` channel
 - No `.unwrap()` in non-test code
 
-**✋ Pause Point — Wait for user review before proceeding to Phase 6.**
+**✋ Pause Point — Wait for user review before proceeding to Step 6.**
 
 ---
 
-### Phase 6: Ollama Vision Client
+### Step 6: Ollama Vision Client
 
 **Goal:** Implement the `OllamaVision` struct that sends base64-encoded frames to a local Ollama instance and parses the VLM's JSON response into a `SemanticLog`. (See Design §3.C)
 
-**Depends on:** Phase 3 complete (traits)
+**Depends on:** Step 3 complete (traits)
 
 **Crate(s):** `chronos-inference`
 
@@ -661,15 +663,15 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - No `.unwrap()` in non-test code
 - No outbound HTTP to anything other than `localhost` (privacy constraint)
 
-**✋ Pause Point — Wait for user review before proceeding to Phase 7.**
+**✋ Pause Point — Wait for user review before proceeding to Step 7.**
 
 ---
 
-### Phase 7: Pipeline Integration (Daemon)
+### Step 7: Pipeline Integration (Daemon)
 
 **Goal:** Wire the full pipeline: Capture → Vision → Database. Implement the main async loop in the daemon crate that receives frames from a channel, sends them to the VLM, and stores results in SQLite. (See Design §3.A, §5.B)
 
-**Depends on:** Phases 4, 5, and 6 complete
+**Depends on:** Steps 4, 5, and 6 complete
 
 **Crate(s):** `chronos-daemon`
 
@@ -719,15 +721,15 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - Frame IDs flow correctly through the pipeline
 - `cargo test -p chronos-daemon` → all green
 
-**✋ Pause Point — Wait for user review before proceeding to Phase 8.**
+**✋ Pause Point — Wait for user review before proceeding to Step 8.**
 
 ---
 
-### Phase 8: CLI
+### Step 8: CLI
 
 **Goal:** Implement the CLI interface using `clap`: `chronos query`, `chronos status`, `chronos pause`, `chronos resume`. The CLI reads from SQLite and reports system state. (See Design §3.F — "chronos-daemon" crate responsibilities)
 
-**Depends on:** Phase 4 complete (database), Phase 7 for pipeline integration
+**Depends on:** Step 4 complete (database), Step 7 for pipeline integration
 
 **Crate(s):** `chronos-daemon`
 
@@ -777,7 +779,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   > **Go parallel:** In Go you'd use `cobra` or `flag`. Rust's `clap` with `derive` is the equivalent — but it generates help text and validates arguments at compile time.
 
 - [ ] **8.2** Implement command handlers in `main.rs`:
-  - `handle_start()` — initialize Database, X11Capture, OllamaVision, wire the pipeline (from Phase 7), run the async loop
+  - `handle_start()` — initialize Database, X11Capture, OllamaVision, wire the pipeline (from Step 7), run the async loop
   - `handle_query(from, to, limit)` — connect to SQLite, query logs by date range, print results formatted to stdout
   - `handle_status()` — connect to SQLite, print log count + capture state (for v0.1: basic stats from DB)
   - `handle_pause()` / `handle_resume()` — for v0.1, these can write/delete a sentinel file or print a "not yet implemented" message. Full IPC comes in v0.2.
@@ -816,11 +818,11 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - `--help` produces clean usage documentation
 - No hardcoded file paths (use XDG data directory or configurable path)
 
-**✋ Pause Point — Wait for user review before proceeding to Phase 9.**
+**✋ Pause Point — Wait for user review before proceeding to Step 9.**
 
 ---
 
-### Phase 9: Integration & Smoke Test
+### Step 9: Integration & Smoke Test
 
 **Goal:** Full workspace verification. All tests green, all lints clean, all formatting correct. Run the `/Verify Cargo Workspace` workflow. Write a basic README.
 

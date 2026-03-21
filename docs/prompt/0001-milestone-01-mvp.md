@@ -12,7 +12,7 @@ You are a Senior Rust Systems Engineer building "Chronos" — a local-first scre
 
 ## Your Mission
 
-Generate a comprehensive, detailed roadmap document for **Phase 0.1 (MVP/POC)** of Chronos. The document must contain every task, subtask, file to create, struct/trait to define, test to write, and verification step needed to go from an empty `cargo workspace` to a fully functional MVP.
+Generate a comprehensive, detailed roadmap document for **Milestone 1 (MVP/POC)** of Chronos. The document must contain every task, subtask, file to create, struct/trait to define, test to write, and verification step needed to go from an empty `cargo workspace` to a fully functional MVP.
 
 ## Context: Read These First
 
@@ -48,24 +48,24 @@ Generate the roadmap as a Markdown document with this exact structure:
 - Shared dependencies and feature flags
 - Directory tree showing every file that will be created
 
-### 2. Implementation Phases (ordered by dependency)
-Break the MVP into **sequential phases** where each phase is a compilable, testable unit. For each phase:
+### 2. Implementation Steps (ordered by dependency)
+Break the MVP into **sequential steps** where each step is a compilable, testable unit. For each step:
 
-#### Phase N: [Name]
+#### Step N: [Name]
 - **Goal:** 1-sentence summary of what this phase achieves
-- **Depends on:** Which prior phases must be complete
+- **Depends on:** Which prior steps must be complete
 - **Crate(s):** Which workspace crate(s) are touched
 - **Tasks:** Numbered checklist of specific implementation tasks. Each task must specify:
   - The exact file path (e.g., `crates/chronos-core/src/models.rs`)
   - The structs, traits, or functions to implement
   - The corresponding test(s) to write
   - The `cargo check` / `cargo test` verification command
-- **Acceptance Criteria:** What must pass before moving to the next phase
+- **Acceptance Criteria:** What must pass before moving to the next step
 - **Pause Point:** ✋ Stop here and wait for user review
 
-### 3. Suggested Phases (minimum)
+### 3. Suggested Steps (minimum)
 
-The roadmap MUST include at least these phases in this order:
+The roadmap MUST include at least these steps in this order:
 
 1. **Workspace Skeleton** — Create the cargo workspace, define crate boundaries, add dependencies to each `Cargo.toml`. Verify: `cargo check` passes on empty crates.
 
@@ -131,7 +131,7 @@ Additionally, follow these external skill patterns:
 
 ## Output
 
-Save the generated roadmap to: `docs/roadmap/0001-phase-01-mvp-roadmap.md`
+Save the generated roadmap to: `docs/roadmap/0001-milestone-01-mvp-roadmap.md`
 ```
 
 ---
@@ -142,7 +142,7 @@ Save the generated roadmap to: `docs/roadmap/0001-phase-01-mvp-roadmap.md`
 2. Ensure the design document is accessible at `docs/design/0001-chronos-personal-context-engine.md`
 3. Paste or reference this prompt
 4. The agent will generate the complete roadmap document
-5. Review the roadmap, iterate if needed, then begin Phase 1
+5. Review the roadmap, iterate if needed, then begin Step 1
 
 ## Skills Reference (for quick activation)
 

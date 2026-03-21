@@ -248,7 +248,7 @@ The Capture Daemon is the system's eye. It acquires screen frames, compresses th
 | Edge Case | Risk | Mitigation |
 |---|---|---|
 | Screen locked / display off | Wasted captures; potential privacy leak of lock-screen | Query `org.freedesktop.ScreenSaver` D-Bus interface; pause capture when locked |
-| Multi-monitor | Only primary screen captured | Phase 1: primary only. Phase 2: configurable per-monitor capture |
+| Multi-monitor | Only primary screen captured | Step 1: primary only. Step 2: configurable per-monitor capture |
 | Wayland compositor restrictions | `wl_output` screenshot requires portal | Use `xdg-desktop-portal` `org.freedesktop.portal.Screenshot` for Wayland |
 | Ring buffer full, VLM slow | Frame loss | By design — frames are ephemeral. Log a metric for dropped-frame rate |
 | Very high activity burst (2 fps) | CPU spike | Cap at configurable `max_fps`; JPEG compression is ~1ms on modern CPUs |
@@ -738,7 +738,7 @@ async fn main() -> anyhow::Result<()> {
 
 ## 10. User Interfaces
 
-### Phase 1: CLI (MVP)
+### Step 1: CLI (MVP)
 
 ```
 $ chronos query "what charting library did the data team show on Tuesday?"
@@ -838,10 +838,10 @@ flowchart LR
     style FUTURE fill:#e3b341,stroke:#f9d548,color:#0d1117
 ```
 
-### Phase Details
+### Step Details
 
 <details>
-<summary><strong>v0.1 — MVP / Proof of Concept</strong> (Current Phase)</summary>
+<summary><strong>v0.1 — MVP / Proof of Concept</strong> (Current Step)</summary>
 
 **Goal:** Validate end-to-end pipeline on a developer Linux machine.
 
