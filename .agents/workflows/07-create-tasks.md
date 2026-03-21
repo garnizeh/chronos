@@ -39,6 +39,7 @@ Each generated detailed task document MUST contain the following sections:
   - Checkboxes to run verification commands (e.g. `cargo clippy`, `cargo test`).
 - **Code Scaffolding (Optional but recommended):** Provide struct, enum, or trait definitions as starting points. Do not write full implementations; leave room for TDD execution.
 - **Conventional Commit:** Suggest a commit message that follows the project rules once the task is complete (e.g., `feat(chronos-core): implement capture config model`).
+  > ⚠️ **CRITICAL RULE:** The AI and Developer MUST execute this `git commit` *before* moving to or beginning the execution of the next sequential task.
 
 ## 6. Project Constraints Validation
 Before finalizing the documents, double-check:
