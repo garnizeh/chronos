@@ -14,7 +14,7 @@ This is the equivalent of running `go test ./pkg/capture/...` and ensuring your 
   ```
 - [x] Run `cargo test -p chronos-capture` and verify all tests added in Tasks 5.1 and 5.2 are green.
 - [x] Run `cargo clippy -p chronos-capture -- -D warnings` and fix any linting errors.
-- [x] Run `cargo fmt -p chronos-capture`.
+- [x] Run `cargo fmt -p chronos-capture -- --check`.
 
 ## Conventional Commit
 `test(chronos-capture): verify ring buffer and x11 module exports`
