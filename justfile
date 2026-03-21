@@ -156,6 +156,8 @@ set shell := ["bash", "-c"]
     cargo clippy --workspace --all-targets -- -D warnings
     echo -e "\n4. Running test suite with nextest..."
     cargo nextest run --workspace
+    echo -e "\n5. Generating test coverage summary..."
+    cargo llvm-cov --workspace
     echo -e "\n✅ All local CI checks passed! Safe to commit."
 
 # ==============================================================================
