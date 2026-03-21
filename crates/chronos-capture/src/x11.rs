@@ -277,13 +277,14 @@ mod tests {
         let (tx, mut rx) = mpsc::channel(10);
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
-        let _handle = capture.start_capture_loop(tx, shutdown_rx);
+        let handle = capture.start_capture_loop(tx, shutdown_rx);
 
         // Wait for at least one frame
         let frame = rx.blocking_recv().unwrap();
         assert_eq!(frame.width, 2);
 
         shutdown_tx.send(true).unwrap();
+        handle.join().unwrap();
     }
 
     #[test]
@@ -323,11 +324,12 @@ mod tests {
         let (tx, _rx) = mpsc::channel(10);
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
-        let _handle = capture.start_capture_loop(tx, shutdown_rx);
+        let handle = capture.start_capture_loop(tx, shutdown_rx);
 
         // Wait a bit for the loop to execute the error path
         std::thread::sleep(std::time::Duration::from_millis(10));
         shutdown_tx.send(true).unwrap();
+        handle.join().unwrap();
     }
 
     #[test]

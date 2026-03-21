@@ -157,7 +157,7 @@ set shell := ["bash", "-c"]
     echo -e "\n4. Running test suite with nextest..."
     cargo nextest run --workspace
     echo -e "\n5. Generating test coverage summary..."
-    cargo llvm-cov --workspace
+    cargo llvm-cov nextest --workspace
     echo -e "\n✅ All local CI checks passed! Safe to commit."
 
 # ==============================================================================
