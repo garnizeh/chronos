@@ -20,6 +20,8 @@ This is conceptually similar to a buffered channel in Go `make(chan Frame, capac
   - [x] `test_push_drops_oldest_when_full`
   - [x] `test_latest_returns_most_recent`
   - [x] `test_empty_buffer`
+- [x] **Task 5.3: Thread-Safe Ring Buffer**: Implemented a bounded `FrameRingBuffer` using `Arc<Mutex<VecDeque<Arc<Frame>>>>`. This provides internal synchronization and efficient data sharing between threads (using `Arc<Frame>` to avoid cloning raw pixels). Verified with concurrent unit tests.
+- [x] Run `cargo fmt -p chronos-capture -- --check`.
 - [x] Run `cargo test -p chronos-capture`.
 - [x] Run `cargo clippy -p chronos-capture -- -D warnings`.
 
