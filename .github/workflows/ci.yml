@@ -29,6 +29,11 @@ jobs:
         with:
           components: rustfmt, clippy, llvm-tools-preview
 
+      # ── 2.5. OS Dependencies ────────────────────────────────────────────
+      #    xcap needs EGL, X11, Wayland, and PipeWire C headers to compile.
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libegl1-mesa-dev libwayland-dev libx11-xcb-dev libxcb-randr0-dev libdbus-1-dev libpipewire-0.3-dev libgbm-dev clang libclang-dev
+
       # ── 3. Install cargo-llvm-cov ──────────────────────────────────────
       #    Source-based code coverage using LLVM instrumentation.
       #    Think of it as Go's `go test -coverprofile` but for Rust.
