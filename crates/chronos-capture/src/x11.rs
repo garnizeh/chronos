@@ -50,57 +50,47 @@ impl X11Capture {
                     break;
                 }
 
-                match Monitor::all() {
-                    Ok(monitors) => {
-                        if let Some(primary) = monitors.first() {
-                            match primary.capture_image() {
-                                Ok(image) => {
-                                    let width = image.width();
-                                    let height = image.height();
+                match Self::find_primary_monitor() {
+                    Ok(primary) => {
+                        match primary.capture_image() {
+                            Ok(image) => {
+                                let width = image.width();
+                                let height = image.height();
 
-                                    // Encode to PNG purely in RAM (no SSD wear/tear - Architecture Rule)
-                                    let mut buffer = Vec::new();
-                                    if let Err(e) = image.write_to(
-                                        &mut Cursor::new(&mut buffer),
-                                        image::ImageFormat::Png,
-                                    ) {
+                                // Encode to PNG purely in RAM (no SSD wear/tear - Architecture Rule)
+                                let mut buffer = Vec::new();
+                                if let Err(e) = image.write_to(
+                                    &mut Cursor::new(&mut buffer),
+                                    image::ImageFormat::Png,
+                                ) {
+                                    tracing::error!("Failed to encode PNG for frame capture: {}", e);
+                                } else {
+                                    let frame = Frame {
+                                        id: Ulid::new(),
+                                        timestamp: Utc::now(),
+                                        image_data: buffer,
+                                        width,
+                                        height,
+                                    };
+
+                                    // Send the frame to the async world.
+                                    // Provide back-pressure by handling blocked/closed channels.
+                                    if let Err(e) = tx.blocking_send(frame) {
                                         tracing::error!(
-                                            "Failed to encode PNG for frame capture: {}",
+                                            "Failed to send frame (receiver likely closed): {}",
                                             e
                                         );
-                                    } else {
-                                        let frame = Frame {
-                                            id: Ulid::new(),
-                                            timestamp: Utc::now(),
-                                            image_data: buffer,
-                                            width,
-                                            height,
-                                        };
-
-                                        // Send the frame to the async world.
-                                        // Provide back-pressure by handling blocked/closed channels.
-                                        if let Err(e) = tx.blocking_send(frame) {
-                                            tracing::error!(
-                                                "Failed to send frame (receiver likely closed): {}",
-                                                e
-                                            );
-                                            break;
-                                        }
+                                        break;
                                     }
                                 }
-                                Err(e) => {
-                                    tracing::error!(
-                                        "Failed to capture image from primary monitor: {}",
-                                        e
-                                    );
-                                }
                             }
-                        } else {
-                            tracing::error!("No primary monitor detected for screen capture");
+                            Err(e) => {
+                                tracing::error!("Failed to capture image from primary monitor: {}", e);
+                            }
                         }
                     }
                     Err(e) => {
-                        tracing::error!("Failed to enumerate monitors via xcap: {}", e);
+                        tracing::error!("Screen capture loop error: {}", e);
                     }
                 }
 
@@ -108,6 +98,18 @@ impl X11Capture {
                 std::thread::sleep(interval);
             }
         })
+    }
+
+    /// Helper to find the primary monitor among all available monitors.
+    fn find_primary_monitor() -> Result<Monitor> {
+        let monitors = Monitor::all().map_err(|e| {
+            ChronosError::Capture(format!("Failed to enumerate monitors: {}", e))
+        })?;
+
+        monitors
+            .into_iter()
+            .find(|m| m.is_primary().unwrap_or(false))
+            .ok_or_else(|| ChronosError::Capture("No primary monitor detected".to_string()))
     }
 }
 
@@ -117,13 +119,7 @@ impl ImageCapture for X11Capture {
     /// to avoid locking the Tokio executor during the X11 call.
     async fn capture_frame(&self) -> Result<Frame> {
         let handle = tokio::task::spawn_blocking(move || -> Result<Frame> {
-            let monitors = Monitor::all().map_err(|e| {
-                ChronosError::Capture(format!("Failed to enumerate monitors: {}", e))
-            })?;
-
-            let primary = monitors
-                .first()
-                .ok_or_else(|| ChronosError::Capture("No monitors found".to_string()))?;
+            let primary = Self::find_primary_monitor()?;
 
             let image = primary
                 .capture_image()
