@@ -132,10 +132,14 @@ mod tests {
         assert_eq!(frames[0].width, 200, "Oldest should now be frame2");
         assert_eq!(frames[1].width, 300, "Newest should be frame3");
 
-        // Explicitly verify frame1 is gone
+        // Explicitly verify frame1 is gone and frame2 is still there
         assert!(
             frames.iter().all(|f| f.width != 100),
             "frame1 should have been evicted"
+        );
+        assert!(
+            frames.iter().any(|f| f.width == 200),
+            "frame2 should still be present"
         );
     }
 

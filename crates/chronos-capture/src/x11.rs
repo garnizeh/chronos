@@ -21,13 +21,20 @@ pub struct XcapSource;
 
 impl CaptureSource for XcapSource {
     fn capture_primary(&self) -> Result<image::RgbaImage> {
-        let monitors = Monitor::all().map_err(|e| {
-            ChronosError::Capture(format!("Failed to enumerate monitors: {}", e))
-        })?;
+        let monitors = Monitor::all()
+            .map_err(|e| ChronosError::Capture(format!("Failed to enumerate monitors: {}", e)))?;
 
-        let primary = monitors
-            .into_iter()
-            .find(|m| m.is_primary().unwrap_or(false))
+        let mut primary = None;
+        for m in monitors {
+            if m.is_primary().map_err(|e| {
+                ChronosError::Capture(format!("Failed to check if monitor is primary: {}", e))
+            })? {
+                primary = Some(m);
+                break;
+            }
+        }
+
+        let primary = primary
             .ok_or_else(|| ChronosError::Capture("No primary monitor detected".to_string()))?;
 
         primary
@@ -85,22 +92,36 @@ impl X11Capture {
 
         // Spawn a dedicated OS thread (NOT a Tokio task) for blocking X11 IO.
         std::thread::spawn(move || {
-            let interval = std::time::Duration::from_secs(config.interval_seconds);
+            let interval = std::time::Duration::from_secs(config.interval_seconds.max(1));
+            let tick_interval = std::time::Duration::from_millis(100);
 
             loop {
-                // Check if we should shut down (non-blocking lookup on the watch channel)
+                // Check shutdown before starting a new cycle
                 if *shutdown_rx.borrow() {
                     break;
                 }
 
                 match source.capture_primary() {
                     Ok(image) => match Self::encode_image_to_frame(image) {
-                        Ok(frame) => {
-                            // Send the frame to the async world. 
-                            // Provide back-pressure by handling blocked/closed channels.
-                            if let Err(e) = tx.blocking_send(frame) {
-                                tracing::error!("Failed to send frame (receiver likely closed): {}", e);
-                                break;
+                        Ok(mut frame) => {
+                            // Send the frame with interruptible retry
+                            loop {
+                                if *shutdown_rx.borrow() {
+                                    return;
+                                }
+
+                                match tx.try_send(frame) {
+                                    Ok(_) => break,
+                                    Err(mpsc::error::TrySendError::Full(returned_frame)) => {
+                                        frame = returned_frame;
+                                        // Back-pressure: wait a bit and check shutdown again
+                                        std::thread::sleep(std::time::Duration::from_millis(50));
+                                    }
+                                    Err(mpsc::error::TrySendError::Closed(_)) => {
+                                        tracing::error!("Failed to send frame (receiver closed)");
+                                        return;
+                                    }
+                                }
                             }
                         }
                         Err(e) => {
@@ -112,12 +133,17 @@ impl X11Capture {
                     }
                 }
 
-                // Sleep for the defined interval
-                std::thread::sleep(interval);
+                // Interruptible sleep: sleep in small "ticks" until interval is reached
+                let sleep_start = std::time::Instant::now();
+                while sleep_start.elapsed() < interval {
+                    if *shutdown_rx.borrow() {
+                        return;
+                    }
+                    std::thread::sleep(tick_interval);
+                }
             }
         })
     }
-
 
     /// Encodes a raw image buffer into a structured PNG `Frame`.
     /// This is an internal helper to centralize the encoding logic and
@@ -277,7 +303,7 @@ mod tests {
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
         let handle = capture.start_capture_loop(tx, shutdown_rx);
-        
+
         // The loop should break upon failing to send
         handle.join().unwrap();
         shutdown_tx.send(true).ok(); // Clean up just in case
@@ -298,7 +324,7 @@ mod tests {
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
         let _handle = capture.start_capture_loop(tx, shutdown_rx);
-        
+
         // Wait a bit for the loop to execute the error path
         std::thread::sleep(std::time::Duration::from_millis(10));
         shutdown_tx.send(true).unwrap();
