@@ -37,6 +37,43 @@ pub struct SemanticLog {
     pub raw_vlm_response: String,
 }
 
+/// Configuration for the screen capture timing and memory limit.
+/// 
+/// **Go Parallel:** In Go, this would often be instantiated via a `NewDefaultCaptureConfig()` 
+/// function. Rust uses the standard `Default` trait, allowing `CaptureConfig::default()`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CaptureConfig {
+    pub interval_seconds: u64,
+    pub ring_buffer_capacity: usize,
+}
+
+impl Default for CaptureConfig {
+    fn default() -> Self {
+        Self {
+            interval_seconds: 30,
+            ring_buffer_capacity: 64,
+        }
+    }
+}
+
+/// Configuration for the local VLM engine (Ollama).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct VlmConfig {
+    pub ollama_host: String,
+    pub model_name: String,
+    pub timeout_seconds: u64,
+}
+
+impl Default for VlmConfig {
+    fn default() -> Self {
+        Self {
+            ollama_host: "http://localhost:11434".to_string(),
+            model_name: "moondream".to_string(),
+            timeout_seconds: 60,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -85,5 +122,20 @@ mod tests {
         // Assert all fields match after round-trip
         assert_eq!(log, deserialized);
         assert_eq!(deserialized.key_entities.len(), 2);
+    }
+
+    #[test]
+    fn test_capture_config_defaults() {
+        let config = CaptureConfig::default();
+        assert_eq!(config.interval_seconds, 30);
+        assert_eq!(config.ring_buffer_capacity, 64);
+    }
+
+    #[test]
+    fn test_vlm_config_defaults() {
+        let config = VlmConfig::default();
+        assert_eq!(config.ollama_host, "http://localhost:11434");
+        assert_eq!(config.model_name, "moondream");
+        assert_eq!(config.timeout_seconds, 60);
     }
 }
