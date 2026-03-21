@@ -33,7 +33,7 @@ Chronos uses a `cargo workspace` with **4 member crates**, each with a single cl
 
 | Crate | Responsibility | Key Dependencies |
 |---|---|---|
-| `chronos-core` | Domain models, traits, error types, shared config | `serde`, `serde_json`, `chrono`, `thiserror`, `uuid` |
+| `chronos-core` | Domain models, traits, error types, shared config | `serde`, `serde_json`, `chrono`, `thiserror`, `ulid` |
 | `chronos-capture` | X11 screen capture, ring buffer, OS thread management | `xcap`, `tokio` (channel only), `chronos-core` |
 | `chronos-inference` | Ollama HTTP client, VLM request/response, JSON parsing | `reqwest`, `serde_json`, `base64`, `tokio`, `chronos-core` |
 | `chronos-daemon` | Main binary — pipeline orchestration, CLI, SQLite, async runtime | `tokio`, `sqlx`, `clap`, `chronos-core`, `chronos-capture`, `chronos-inference` |
@@ -189,7 +189,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - `serde_json = "1"`
   - `chrono = { version = "0.4", features = ["serde"] }`
   - `thiserror = "2"`
-  - `uuid = { version = "1", features = ["v4", "serde"] }`
+  - `ulid = { version = "1.1", features = ["serde"] }`
 - [x] **1.3** Create `crates/chronos-core/src/lib.rs` with empty module declarations
 - [x] **1.4** Create `crates/chronos-capture/Cargo.toml` with dependencies:
   - `chronos-core = { path = "../chronos-core" }`
@@ -230,6 +230,8 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ### Step 2: Core Domain Models
 
+> 📋 **Detailed tasks:** [`tasks-step-2-core-domain-models/`](tasks-step-2-core-domain-models/)
+
 **Goal:** Define all shared data types: `Frame`, `SemanticLog`, `CaptureConfig`, `VlmConfig`, and the domain error enum. Validate with serialization round-trip tests.
 
 **Depends on:** Step 1 complete
@@ -255,7 +257,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - `Frame` struct (see Design §3.B):
     ```rust
     pub struct Frame {
-        pub id: Uuid,
+        pub id: Ulid,
         pub timestamp: DateTime<Utc>,
         pub image_data: Vec<u8>,  // Raw PNG bytes (in RAM only!)
         pub width: u32,
@@ -267,9 +269,9 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - `SemanticLog` struct (see Design §3.D, Table schema):
     ```rust
     pub struct SemanticLog {
-        pub id: Uuid,
+        pub id: Ulid,
         pub timestamp: DateTime<Utc>,
-        pub source_frame_id: Uuid,
+        pub source_frame_id: Ulid,
         pub description: String,
         pub active_application: Option<String>,
         pub activity_category: Option<String>,
@@ -372,7 +374,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     impl ImageCapture for MockCapture {
         async fn capture_frame(&self) -> Result<Frame> {
             Ok(Frame {
-                id: Uuid::new_v4(),
+                id: Ulid::new(),
                 timestamp: Utc::now(),
                 image_data: vec![0x89, 0x50, 0x4E, 0x47], // PNG magic bytes
                 width: 1,
@@ -391,7 +393,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     impl VisionInference for MockVision {
         async fn analyze_frame(&self, frame: &Frame) -> Result<SemanticLog> {
             Ok(SemanticLog {
-                id: Uuid::new_v4(),
+                id: Ulid::new(),
                 timestamp: frame.timestamp,
                 source_frame_id: frame.id,
                 description: "User editing code in VSCode".to_string(),
@@ -409,7 +411,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - `test_mock_capture_returns_frame` — verify MockCapture produces a valid Frame with PNG magic bytes
   - `test_mock_vision_returns_semantic_log` — verify MockVision produces a valid SemanticLog with expected fields
   - `test_mock_vision_preserves_frame_id` — verify `source_frame_id` matches the input frame's `id`
-  - `test_mock_capture_unique_ids` — verify two captures produce different UUIDs
+  - `test_mock_capture_unique_ids` — verify two captures produce different ULIDs
   - `test_trait_object_dispatch` — create a `Box<dyn ImageCapture>` from MockCapture, call it, verify it works (proves dynamic dispatch is viable)
 
   > **Go parallel:** These tests are equivalent to testing a Go interface with a stub implementation. The `Box<dyn Trait>` test proves Rust's dynamic dispatch works like Go's implicit interface satisfaction.
@@ -442,9 +444,9 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   ```sql
   -- UP: Create the semantic_logs table (see Design §3.D)
   CREATE TABLE IF NOT EXISTS semantic_logs (
-      id              TEXT PRIMARY KEY NOT NULL,    -- UUID as text
+      id              TEXT PRIMARY KEY NOT NULL,    -- ULID as text
       timestamp       TEXT NOT NULL,                -- ISO 8601
-      source_frame_id TEXT NOT NULL,                -- UUID of the originating frame
+      source_frame_id TEXT NOT NULL,                -- ULID of the originating frame
       description     TEXT NOT NULL,                -- VLM-generated description
       active_application TEXT,                      -- Detected active window
       activity_category  TEXT,                      -- Classified activity type

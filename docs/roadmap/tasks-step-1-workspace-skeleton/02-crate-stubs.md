@@ -29,7 +29,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "2"
-uuid = { version = "1", features = ["v4", "serde"] }
+ulid = { version = "1.1", features = ["serde"] }
 ```
 
 **Why these dependencies:**
@@ -39,7 +39,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 | `serde` + `serde_json` | Serialization framework — like `encoding/json` but compile-time derived, zero-cost | `encoding/json` + struct tags |
 | `chrono` | Date/time — like `time.Time` but with timezone-aware types and `serde` integration | `time` package |
 | `thiserror` | Derive macro for `std::error::Error` — eliminates boilerplate | `errors.New()` + `fmt.Errorf()` |
-| `uuid` | UUID v4 generation — like `google/uuid` | `github.com/google/uuid` |
+| `ulid` | ULID generation — like `oklog/ulid` | `github.com/oklog/ulid` |
 
 **Gotchas:**
 - `serde` needs `features = ["derive"]` to enable `#[derive(Serialize, Deserialize)]`. Without it, you get a confusing "cannot find derive macro" error.
