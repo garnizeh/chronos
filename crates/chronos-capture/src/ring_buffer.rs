@@ -127,13 +127,16 @@ mod tests {
 
         let frames = rb.to_vec();
         assert_eq!(frames.len(), 2);
-        
+
         // The frames remaining should be frame2 and frame3
         assert_eq!(frames[0].width, 200, "Oldest should now be frame2");
         assert_eq!(frames[1].width, 300, "Newest should be frame3");
-        
+
         // Explicitly verify frame1 is gone
-        assert!(frames.iter().all(|f| f.width != 100), "frame1 should have been evicted");
+        assert!(
+            frames.iter().all(|f| f.width != 100),
+            "frame1 should have been evicted"
+        );
     }
 
     #[test]

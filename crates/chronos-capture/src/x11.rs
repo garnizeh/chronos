@@ -61,7 +61,7 @@ impl X11Capture {
                             Ok(image) => {
                                 match Self::encode_image_to_frame(image) {
                                     Ok(frame) => {
-                                        // Send the frame to the async world. 
+                                        // Send the frame to the async world.
                                         // Provide back-pressure by handling blocked/closed channels.
                                         if let Err(e) = tx.blocking_send(frame) {
                                             tracing::error!(
@@ -77,7 +77,10 @@ impl X11Capture {
                                 }
                             }
                             Err(e) => {
-                                tracing::error!("Failed to capture image from primary monitor: {}", e);
+                                tracing::error!(
+                                    "Failed to capture image from primary monitor: {}",
+                                    e
+                                );
                             }
                         }
                     }
@@ -92,12 +95,10 @@ impl X11Capture {
         })
     }
 
-
     /// Helper to find the primary monitor among all available monitors.
     fn find_primary_monitor() -> Result<Monitor> {
-        let monitors = Monitor::all().map_err(|e| {
-            ChronosError::Capture(format!("Failed to enumerate monitors: {}", e))
-        })?;
+        let monitors = Monitor::all()
+            .map_err(|e| ChronosError::Capture(format!("Failed to enumerate monitors: {}", e)))?;
 
         monitors
             .into_iter()
