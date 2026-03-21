@@ -30,7 +30,7 @@ In Go, you'd use `golang-migrate` or `goose` for SQL migrations. Rust's `sqlx` h
   -- Index for filtering by application
   CREATE INDEX IF NOT EXISTS idx_semantic_logs_app ON semantic_logs(active_application);
   ```
-- [ ] Run `sqlx migrate run` (or equivalent via `just` if available) to verify the SQL syntax.
+- [x] Run `sqlx migrate run` (or equivalent via `just` if available) to verify the SQL syntax.
 
 ## Conventional Commit
 `feat(chronos-daemon): add initial sqlite migration for semantic logs`
