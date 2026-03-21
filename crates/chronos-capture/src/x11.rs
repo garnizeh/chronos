@@ -64,7 +64,10 @@ impl X11Capture {
                                         &mut Cursor::new(&mut buffer),
                                         image::ImageFormat::Png,
                                     ) {
-                                        tracing::error!("Failed to encode PNG for frame capture: {}", e);
+                                        tracing::error!(
+                                            "Failed to encode PNG for frame capture: {}",
+                                            e
+                                        );
                                     } else {
                                         let frame = Frame {
                                             id: Ulid::new(),
@@ -74,16 +77,22 @@ impl X11Capture {
                                             height,
                                         };
 
-                                        // Send the frame to the async world. 
+                                        // Send the frame to the async world.
                                         // Provide back-pressure by handling blocked/closed channels.
                                         if let Err(e) = tx.blocking_send(frame) {
-                                            tracing::error!("Failed to send frame (receiver likely closed): {}", e);
+                                            tracing::error!(
+                                                "Failed to send frame (receiver likely closed): {}",
+                                                e
+                                            );
                                             break;
                                         }
                                     }
                                 }
                                 Err(e) => {
-                                    tracing::error!("Failed to capture image from primary monitor: {}", e);
+                                    tracing::error!(
+                                        "Failed to capture image from primary monitor: {}",
+                                        e
+                                    );
                                 }
                             }
                         } else {
