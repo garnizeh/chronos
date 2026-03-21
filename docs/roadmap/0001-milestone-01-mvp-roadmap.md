@@ -463,6 +463,8 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ### Step 5: Screen Capture (X11)
 
+> 📋 **Detailed tasks:** [`tasks-step-5-screen-capture/`](tasks-step-5-screen-capture/)
+
 **Goal:** Implement the `X11Capture` struct that captures the primary monitor via `xcap` on a dedicated OS thread, stores frames in a ring buffer, and bridges to the async world via `tokio::sync::mpsc`. Follow the `/OS & Async Boundary Control` workflow.
 
 **Depends on:** Step 3 complete (traits)

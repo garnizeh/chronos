@@ -1,0 +1,46 @@
+# Task 5.1: Frame Ring Buffer
+
+## Objective
+Implement a thread-safe, bounded ring buffer to store captured screen frames and manage back-pressure.
+
+## Mental Map / Go Parallel
+This is conceptually similar to a buffered channel in Go `make(chan Frame, capacity)` combined with a standard slice. However, when a Go channel is full, pushing blocks. For Chronos, we explicitly want to *drop the oldest frame* to maintain real-time performance without boundless memory growth. This is like a fixed-size `container/ring` combined with lock-free semantics or explicit `sync.Mutex`.
+
+## Implementation Steps
+- [ ] Create `crates/chronos-capture/src/ring_buffer.rs`.
+- [ ] Define the `FrameRingBuffer` struct wrapping a `std::collections::VecDeque<Frame>` and a `usize` capacity.
+- [ ] Implement `new(capacity: usize) -> Self`.
+- [ ] Implement `push(&mut self, frame: Frame)`:
+  - If `len() == capacity`, call `pop_front()` to drop the oldest.
+  - Call `push_back(frame)`.
+- [ ] Implement `len(&self) -> usize` and `is_empty(&self) -> bool`.
+- [ ] Implement `latest(&self) -> Option<&Frame>` returning `back()`.
+- [ ] Write `#[cfg(test)]` block in the same file:
+  - [ ] `test_push_within_capacity`
+  - [ ] `test_push_drops_oldest_when_full`
+  - [ ] `test_latest_returns_most_recent`
+  - [ ] `test_empty_buffer`
+- [ ] Run `cargo test -p chronos-capture`.
+- [ ] Run `cargo clippy -p chronos-capture -- -D warnings`.
+
+## Code Scaffolding
+```rust
+use chronos_core::models::Frame;
+use std::collections::VecDeque;
+
+pub struct FrameRingBuffer {
+    buffer: VecDeque<Frame>,
+    capacity: usize,
+}
+
+impl FrameRingBuffer {
+    pub fn new(capacity: usize) -> Self {
+        // TODO: implementation
+    }
+    
+    // ... other methods ...
+}
+```
+
+## Conventional Commit
+`feat(chronos-capture): implement bounded ring buffer for frames`
