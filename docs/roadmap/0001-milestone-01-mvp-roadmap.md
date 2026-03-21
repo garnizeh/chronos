@@ -542,6 +542,8 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ### Step 6: Ollama Vision Client
 
+> 📋 **Detailed tasks:** [tasks-step-6-ollama-vision-client/](tasks-step-6-ollama-vision-client/)
+
 **Goal:** Implement the `OllamaVision` struct that sends base64-encoded frames to a local Ollama instance and parses the VLM's JSON response into a `SemanticLog`. (See Design §3.C)
 
 **Depends on:** Step 3 complete (traits)
