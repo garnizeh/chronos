@@ -8,7 +8,7 @@
 [![CI](https://github.com/garnizeh/chronos/actions/workflows/ci.yml/badge.svg)](https://github.com/garnizeh/chronos/actions/workflows/ci.yml)
 [![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/garnizeh/chronos?utm_source=oss&utm_medium=github&utm_campaign=garnizeh%2Fchronos&labelColor=171717&color=FF570A&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 [![codecov](https://codecov.io/gh/garnizeh/chronos/graph/badge.svg?token=UG4S5JZMDI)](https://codecov.io/gh/garnizeh/chronos)
-[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey)](#prerequisites)
+[![Platform](https://img.shields.io/badge/platform-linux%20(X11)-lightgrey)](#prerequisites)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/garnizeh/chronos/pulls)
 
