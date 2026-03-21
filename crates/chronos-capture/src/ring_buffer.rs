@@ -29,7 +29,13 @@ pub struct FrameRingBuffer {
 
 impl FrameRingBuffer {
     /// Creates a new empty ring buffer with the specified maximum capacity.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `capacity` is 0, as a zero-capacity buffer would break internal
+    /// eviction logic.
     pub fn new(capacity: usize) -> Self {
+        assert!(capacity > 0, "FrameRingBuffer capacity must be at least 1");
         Self {
             buffer: Arc::new(Mutex::new(VecDeque::with_capacity(capacity))),
             capacity,
@@ -153,5 +159,11 @@ mod tests {
 
         handle.join().unwrap();
         assert_eq!(rb.len(), 100);
+    }
+
+    #[test]
+    #[should_panic(expected = "FrameRingBuffer capacity must be at least 1")]
+    fn test_new_with_zero_capacity_panics() {
+        let _ = FrameRingBuffer::new(0);
     }
 }
