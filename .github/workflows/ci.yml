@@ -22,6 +22,8 @@ env:
   # from the .sqlx/ directory instead of connecting to a live database.
   # Go Equivalent: Using pre-generated mock data for compile-time checks.
   SQLX_OFFLINE: true
+  # Reason: Forces JavaScript-based GitHub Actions to use Node24 instead of the default.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
