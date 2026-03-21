@@ -47,7 +47,7 @@ impl OllamaVision {
     /// Internal helper to parse the VLM's response text.
     /// If the response is valid JSON, it maps it to the expected fields.
     /// If not, it falls back to using the entire text as a description with low confidence.
-    fn parse_vlm_response(&self, raw: &str) -> VlmJsonResponse {
+    fn parse_vlm_response(raw: &str) -> VlmJsonResponse {
         // Try to parse as JSON first
         if let Ok(json) = serde_json::from_str::<VlmJsonResponse>(raw) {
             return json;
@@ -123,7 +123,7 @@ impl VisionInference for OllamaVision {
         })?;
 
         // 5. Parse the inner semantic JSON from the VLM
-        let parsed = self.parse_vlm_response(&ollama_res.response);
+        let parsed = Self::parse_vlm_response(&ollama_res.response);
 
         // 6. Map to SemanticLog
         Ok(SemanticLog {
@@ -155,7 +155,6 @@ mod tests {
 
     #[test]
     fn test_parse_valid_vlm_json() {
-        let vision = OllamaVision::new(VlmConfig::default()).unwrap();
         let raw = r#"{
             "description": "User is writing Rust code",
             "active_application": "VS Code",
@@ -164,7 +163,7 @@ mod tests {
             "confidence_score": 0.95
         }"#;
 
-        let parsed = vision.parse_vlm_response(raw);
+        let parsed = OllamaVision::parse_vlm_response(raw);
         assert_eq!(parsed.description, "User is writing Rust code");
         assert_eq!(parsed.active_application, Some("VS Code".to_string()));
         assert_eq!(parsed.key_entities, vec!["Rust", "Inference"]);
@@ -173,10 +172,9 @@ mod tests {
 
     #[test]
     fn test_parse_malformed_vlm_json_fallback() {
-        let vision = OllamaVision::new(VlmConfig::default()).unwrap();
         let raw = "I see a person working on a computer.";
 
-        let parsed = vision.parse_vlm_response(raw);
+        let parsed = OllamaVision::parse_vlm_response(raw);
         assert_eq!(parsed.description, raw);
         assert_eq!(parsed.active_application, None);
         assert_eq!(parsed.confidence_score, 0.3);
@@ -184,13 +182,12 @@ mod tests {
 
     #[test]
     fn test_parse_partial_vlm_json() {
-        let vision = OllamaVision::new(VlmConfig::default()).unwrap();
         let raw = r#"{
             "description": "Minimal response",
             "confidence_score": 0.5
         }"#;
 
-        let parsed = vision.parse_vlm_response(raw);
+        let parsed = OllamaVision::parse_vlm_response(raw);
         assert_eq!(parsed.description, "Minimal response");
         assert_eq!(parsed.active_application, None);
         assert!(parsed.key_entities.is_empty());
