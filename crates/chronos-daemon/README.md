@@ -2,7 +2,7 @@
 
 ## Role
 **The Orchestrator & CLI.**
-`chronos-daemon` is the entry point of the application. It wires together the capture loops, the inference engine, and the SQLite storage layer. It also provides the CLI interface for starting the service and querying history.
+`chronos-daemon` is the entry point of the application. It wires together the capture loops, the inference engine, and the SQLite storage layer. It also provides the CLI for starting the service and querying history.
 
 ## Architectural Constraints
 - **Lifecycle Management**: Responsible for managing the Tokio runtime and coordinating the graceful shutdown of background threads via `tokio::sync::watch`.
