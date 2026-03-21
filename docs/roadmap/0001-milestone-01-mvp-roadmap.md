@@ -434,6 +434,8 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ### Step 4: Database Layer
 
+> 📋 **Detailed tasks:** [`tasks-step-4-database-layer/`](tasks-step-4-database-layer/)
+
 **Goal:** Set up SQLite persistence via `sqlx`. Create the `semantic_logs` table schema, implement insert/query operations, and verify with in-memory SQLite tests. Follow the `/Local SQLite & SQLx Pipeline` workflow.
 
 **Depends on:** Step 2 complete (models)
