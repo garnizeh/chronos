@@ -43,7 +43,9 @@ set shell := ["bash", "-c"]
 @git-prune:
     echo "Fetching origin and pruning deleted branches..."
     git fetch -p
-    git branch -vv | grep ': gone]' | awk '{print $1}' | xargs -r git branch -D
+    if [ -n "$(git branch -vv | grep ': gone]' | awk '{print $1}')" ]; then \
+        git branch -vv | grep ': gone]' | awk '{print $1}' | xargs git branch -D; \
+    fi
     echo "Clean up finished!"
 
 # ==============================================================================
