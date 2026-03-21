@@ -27,6 +27,6 @@ pub struct Frame {
 ```
 
 **Conventional Commit:**
-```
+```text
 feat(chronos-core): add Frame domain model
 ```
