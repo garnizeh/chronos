@@ -36,7 +36,7 @@ pub trait VisionInference: Send + Sync {
     async fn analyze_frame(&self, frame: &Frame) -> Result<SemanticLog>;
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "mocks"))]
 pub mod mocks {
     use super::*;
     use chrono::Utc;
@@ -85,52 +85,58 @@ pub mod mocks {
         }
     }
 
-    // Testing the mock capture implementation itself
-    #[tokio::test]
-    async fn test_mock_capture_returns_frame() {
-        let capture = MockCapture;
-        // Unwrap is perfectly fine within a test scope because panic = fail
-        let frame = capture.capture_frame().await.unwrap();
-        assert_eq!(frame.image_data, vec![0x89, 0x50, 0x4E, 0x47]);
-        assert_eq!(frame.width, 1);
-        assert_eq!(frame.height, 1);
-    }
+    // Internal tests for the mocks — only run when testing chronos-core itself
+    #[cfg(test)]
+    mod internal_tests {
+        use super::*;
 
-    // Testing the mock vision implementation
-    #[tokio::test]
-    async fn test_mock_vision_returns_semantic_log() {
-        let capture = MockCapture;
-        let frame = capture.capture_frame().await.unwrap();
+        // Testing the mock capture implementation itself
+        #[tokio::test]
+        async fn test_mock_capture_returns_frame() {
+            let capture = MockCapture;
+            // Unwrap is perfectly fine within a test scope because panic = fail
+            let frame = capture.capture_frame().await.unwrap();
+            assert_eq!(frame.image_data, vec![0x89, 0x50, 0x4E, 0x47]);
+            assert_eq!(frame.width, 1);
+            assert_eq!(frame.height, 1);
+        }
 
-        let vision = MockVision;
-        let log = vision.analyze_frame(&frame).await.unwrap();
+        // Testing the mock vision implementation
+        #[tokio::test]
+        async fn test_mock_vision_returns_semantic_log() {
+            let capture = MockCapture;
+            let frame = capture.capture_frame().await.unwrap();
 
-        // Ensure that the log properly tracked which frame it was created from
-        assert_eq!(log.source_frame_id, frame.id);
-        assert_eq!(log.description, "User editing code in VSCode");
-        assert_eq!(log.confidence_score, 0.95);
-    }
+            let vision = MockVision;
+            let log = vision.analyze_frame(&frame).await.unwrap();
 
-    // Verifying uniquely generated identifiers for frames
-    #[tokio::test]
-    async fn test_mock_capture_unique_ids() {
-        let capture = MockCapture;
-        let f1 = capture.capture_frame().await.unwrap();
-        let f2 = capture.capture_frame().await.unwrap();
-        assert_ne!(f1.id, f2.id); // Identifiers must not conflict
-    }
+            // Ensure that the log properly tracked which frame it was created from
+            assert_eq!(log.source_frame_id, frame.id);
+            assert_eq!(log.description, "User editing code in VSCode");
+            assert_eq!(log.confidence_score, 0.95);
+        }
 
-    // Proving that Rust's dynamic dispatch works smoothly for Traits
-    #[tokio::test]
-    async fn test_trait_object_dispatch() {
-        // Here we prove dynamic dispatch works natively with our Send + Sync trait
-        // This is Rust's equivalent of an interface slice in Go
-        let capture: Box<dyn ImageCapture> = Box::new(MockCapture);
-        let frame = capture.capture_frame().await.unwrap();
+        // Verifying uniquely generated identifiers for frames
+        #[tokio::test]
+        async fn test_mock_capture_unique_ids() {
+            let capture = MockCapture;
+            let f1 = capture.capture_frame().await.unwrap();
+            let f2 = capture.capture_frame().await.unwrap();
+            assert_ne!(f1.id, f2.id); // Identifiers must not conflict
+        }
 
-        let vision: Box<dyn VisionInference> = Box::new(MockVision);
-        let log = vision.analyze_frame(&frame).await.unwrap();
+        // Proving that Rust's dynamic dispatch works smoothly for Traits
+        #[tokio::test]
+        async fn test_trait_object_dispatch() {
+            // Here we prove dynamic dispatch works natively with our Send + Sync trait
+            // This is Rust's equivalent of an interface slice in Go
+            let capture: Box<dyn ImageCapture> = Box::new(MockCapture);
+            let frame = capture.capture_frame().await.unwrap();
 
-        assert_eq!(log.source_frame_id, frame.id);
+            let vision: Box<dyn VisionInference> = Box::new(MockVision);
+            let log = vision.analyze_frame(&frame).await.unwrap();
+
+            assert_eq!(log.source_frame_id, frame.id);
+        }
     }
 }

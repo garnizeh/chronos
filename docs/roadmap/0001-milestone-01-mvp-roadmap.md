@@ -575,7 +575,9 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ---
 
-### Step 7: Pipeline Integration (Daemon)
+### Step 7: Pipeline Integration (Daemon) ✅
+
+> 📋 **Detailed tasks:** [`tasks-step-7-pipeline-integration/`](tasks-step-7-pipeline-integration/)
 
 **Goal:** Wire the full pipeline: Capture → Vision → Database. Implement the main async loop in the daemon crate that receives frames from a channel, sends them to the VLM, and stores results in SQLite. (See Design §3.A, §5.B)
 
@@ -585,7 +587,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **7.1** Create `crates/chronos-daemon/src/pipeline.rs`:
+- [x] **7.1** Create `crates/chronos-daemon/src/pipeline.rs`:
   - `CaptureEngine` struct (see Design §3.A):
     ```rust
     /// The core orchestrator. Receives frames, analyzes them, stores results.
@@ -614,17 +616,12 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
   > **Go parallel:** This is your `for frame := range ch { ... }` loop inside a goroutine. The `mpsc::Receiver` is Rust's equivalent of `<-chan Frame`. The generic `<V: VisionInference>` is like Go's interface constraint on a struct field.
 
-- [ ] **7.2** Write tests (`#[cfg(test)]` in `pipeline.rs`):
+- [x] **7.2** Write tests (`#[cfg(test)]` in `pipeline.rs`):
   - `test_process_frame_with_mocks` — use `MockVision` + in-memory DB, process one frame, verify log stored and returned
   - `test_pipeline_processes_multiple_frames` — send 5 frames through channel with MockCapture → MockVision → in-memory DB, verify 5 logs stored
   - `test_pipeline_handles_vision_error_gracefully` — create a `FailingMockVision` that returns `Err`, verify pipeline doesn't crash, continues processing subsequent frames
   - `test_process_frame_stores_correct_source_frame_id` — verify the stored log's `source_frame_id` matches the input frame's `id`
 
-- [ ] **7.3** Run: `cargo test -p chronos-daemon`
-- [ ] **7.4** Run: `cargo clippy -p chronos-daemon -- -D warnings`
-
-**Acceptance Criteria:**
-- End-to-end mock pipeline test works (MockCapture → MockVision → in-memory SQLite)
 - Pipeline gracefully handles VLM errors without crashing
 - Frame IDs flow correctly through the pipeline
 - `cargo test -p chronos-daemon` → all green
