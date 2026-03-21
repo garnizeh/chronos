@@ -1,18 +1,17 @@
 use chronos_core::models::Frame;
 use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
 
-/// A bounded ring buffer for managing captured frames in memory.
+/// A thread-safe, bounded ring buffer for managing captured frames in memory.
 ///
-/// **Go Parallel (Didactic):** In Go, if you want a fixed-size queue that deliberately
-/// drops the oldest item when full (rather than blocking the sender like a standard
-/// buffered `chan`), you would typically use a slice with a `sync.Mutex` and manually
-/// manage the indices, or use the `container/ring` package.
-///
-/// In Rust, `std::collections::VecDeque` is the standard double-ended queue.
-/// We wrap it in this struct to safely enforce our specific back-pressure policy:
-/// "When memory is full, drop the oldest frame, never block the capture."
+/// **Go Parallel (Didactic):** In Go, this is exactly like a struct with a `sync.Mutex`
+/// and a slice. However, instead of passing pointers (`*Frame`) which requires manual
+/// heap management, we use `Arc<Frame>` (Atomic Reference Count). This ensures that
+/// image data isn't copied when moving between threads, similar to how Go handles
+/// pointers to large structs under the hood.
+#[derive(Clone)]
 pub struct FrameRingBuffer {
-    buffer: VecDeque<Frame>,
+    buffer: Arc<Mutex<VecDeque<Arc<Frame>>>>,
     capacity: usize,
 }
 
@@ -20,40 +19,42 @@ impl FrameRingBuffer {
     /// Creates a new empty ring buffer with the specified maximum capacity.
     pub fn new(capacity: usize) -> Self {
         Self {
-            buffer: VecDeque::with_capacity(capacity),
+            buffer: Arc::new(Mutex::new(VecDeque::with_capacity(capacity))),
             capacity,
         }
     }
 
     /// Pushes a new frame into the buffer.
-    /// If the buffer is already at capacity, the oldest frame (at the front)
-    /// is silently dropped to make room for the newest frame (at the back).
-    pub fn push(&mut self, frame: Frame) {
-        if self.buffer.len() == self.capacity {
-            // Buffer is full. Pop the oldest to enforce our memory limit.
-            self.buffer.pop_front();
+    /// If the buffer is already at capacity, the oldest frame is dropped.
+    ///
+    /// Notice how this takes `&self` but allows mutation? That's "Interior Mutability"
+    /// in Rust. The `Mutex` provides the safety check at runtime, allowing multiple
+    /// threads to push concurrently.
+    pub fn push(&self, frame: Frame) {
+        let mut guard = self.buffer.lock().unwrap();
+        if guard.len() == self.capacity {
+            guard.pop_front();
         }
-        self.buffer.push_back(frame);
+        guard.push_back(Arc::new(frame));
     }
 
     /// Returns the current number of frames in the buffer.
     pub fn len(&self) -> usize {
-        self.buffer.len()
+        self.buffer.lock().unwrap().len()
     }
 
     /// Returns `true` if the buffer contains no frames.
     pub fn is_empty(&self) -> bool {
-        self.buffer.is_empty()
+        self.buffer.lock().unwrap().is_empty()
     }
 
-    /// Returns a reference to the most recently added frame (the back of the queue).
-    /// Returns `None` if the buffer is empty.
+    /// Returns a shared reference (`Arc`) to the most recently added frame.
     ///
-    /// Note: It returns `Option<&Frame>`, which in Go maps roughly to returning
-    /// `(*Frame, bool)`. The borrow checker ensures the returned reference
-    /// cannot outlive the buffer itself.
-    pub fn latest(&self) -> Option<&Frame> {
-        self.buffer.back()
+    /// By returning `Arc<Frame>`, we avoid cloning the large `image_data` Vec.
+    /// Multiple consumers can hold an `Arc` to the same frame simultaneously.
+    pub fn latest(&self) -> Option<Arc<Frame>> {
+        let guard = self.buffer.lock().unwrap();
+        guard.back().cloned()
     }
 }
 
@@ -61,6 +62,7 @@ impl FrameRingBuffer {
 mod tests {
     use super::*;
     use chrono::Utc;
+    use std::thread;
     use ulid::Ulid;
 
     /// Helper to generate a dummy frame for testing.
@@ -76,7 +78,7 @@ mod tests {
 
     #[test]
     fn test_push_within_capacity() {
-        let mut rb = FrameRingBuffer::new(5);
+        let rb = FrameRingBuffer::new(5);
 
         rb.push(create_dummy_frame(100));
         rb.push(create_dummy_frame(200));
@@ -87,7 +89,7 @@ mod tests {
 
     #[test]
     fn test_push_drops_oldest_when_full() {
-        let mut rb = FrameRingBuffer::new(2);
+        let rb = FrameRingBuffer::new(2);
 
         let frame1 = create_dummy_frame(100);
         let frame2 = create_dummy_frame(200);
@@ -99,16 +101,13 @@ mod tests {
 
         assert_eq!(rb.len(), 2, "Capacity should not exceed 2");
 
-        // The front of the internal buffer should now be frame2, and back frame3.
-        // Let's verify by popping manually from the internal deque,
-        // though `latest` gives us the back.
         let latest = rb.latest().expect("Buffer should not be empty");
         assert_eq!(latest.width, 300, "Latest frame should be frame3");
     }
 
     #[test]
     fn test_latest_returns_most_recent() {
-        let mut rb = FrameRingBuffer::new(3);
+        let rb = FrameRingBuffer::new(3);
 
         rb.push(create_dummy_frame(100));
         assert_eq!(rb.latest().unwrap().width, 100);
@@ -123,5 +122,24 @@ mod tests {
         assert!(rb.is_empty());
         assert_eq!(rb.len(), 0);
         assert!(rb.latest().is_none());
+    }
+
+    #[test]
+    fn test_concurrent_push() {
+        let rb = FrameRingBuffer::new(100);
+        let rb_clone = rb.clone();
+
+        let handle = thread::spawn(move || {
+            for i in 0..50 {
+                rb_clone.push(create_dummy_frame(i));
+            }
+        });
+
+        for i in 50..100 {
+            rb.push(create_dummy_frame(i));
+        }
+
+        handle.join().unwrap();
+        assert_eq!(rb.len(), 100);
     }
 }

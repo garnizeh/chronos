@@ -1,7 +1,7 @@
 # Task 5.1: Frame Ring Buffer
 
 ## Objective
-Implement a thread-safe, bounded ring buffer to store captured screen frames and manage back-pressure.
+Implement a thread-safe, bounded ring buffer using `Arc<Mutex<...>>` to store captured screen frames and manage back-pressure.
 
 ## Mental Map / Go Parallel
 This is conceptually similar to a buffered channel in Go `make(chan Frame, capacity)` combined with a standard slice. However, when a Go channel is full, pushing blocks. For Chronos, we explicitly want to *drop the oldest frame* to maintain real-time performance without boundless memory growth. This is like a fixed-size `container/ring` combined with lock-free semantics or explicit `sync.Mutex`.
@@ -27,18 +27,25 @@ This is conceptually similar to a buffered channel in Go `make(chan Frame, capac
 ```rust
 use chronos_core::models::Frame;
 use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
 
 pub struct FrameRingBuffer {
-    buffer: VecDeque<Frame>,
+    buffer: Arc<Mutex<VecDeque<Arc<Frame>>>>,
     capacity: usize,
 }
 
 impl FrameRingBuffer {
     pub fn new(capacity: usize) -> Self {
-        // TODO: implementation
+        // ...
     }
     
-    // ... other methods ...
+    pub fn push(&self, frame: Frame) {
+        // ...
+    }
+    
+    pub fn latest(&self) -> Option<Arc<Frame>> {
+        // ...
+    }
 }
 ```
 

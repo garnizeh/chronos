@@ -477,7 +477,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - `FrameRingBuffer` struct wrapping `VecDeque<Frame>` with a max capacity:
     ```rust
     pub struct FrameRingBuffer {
-        buffer: VecDeque<Frame>,
+        buffer: Arc<Mutex<VecDeque<Arc<Frame>>>>,
         capacity: usize,
     }
     ```
