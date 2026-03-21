@@ -1,2 +1,3 @@
-// chronos-inference: Local VLM inference via Ollama HTTP API.
-// Implementation comes in Step 5.
+pub mod ollama;
+
+pub use ollama::OllamaVision;
