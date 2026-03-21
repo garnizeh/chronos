@@ -2,7 +2,7 @@
 
 > **Source of truth:** [`docs/design/0001-chronos-personal-context-engine.md`](../design/0001-chronos-personal-context-engine.md)  
 > **Prompt spec:** [`docs/prompt/0001-milestone-01-mvp.md`](../prompt/0001-milestone-01-mvp.md)  
-> **Status:** In Progress — Step 2
+> **Status:** In Progress — Step 3
 
 ---
 
@@ -228,7 +228,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ---
 
-### Step 2: Core Domain Models
+### Step 2: Core Domain Models ✅
 
 > 📋 **Detailed tasks:** [`tasks-step-2-core-domain-models/`](tasks-step-2-core-domain-models/)
 
@@ -240,7 +240,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **2.1** Create `crates/chronos-core/src/error.rs`:
+- [x] **2.1** Create `crates/chronos-core/src/error.rs`:
   - Define `ChronosError` enum using `thiserror::Error`:
     - `Capture(String)` — screen capture failures
     - `Inference(String)` — VLM communication errors
@@ -253,7 +253,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
   > **Go parallel:** In Go you'd define `var ErrCapture = errors.New("capture")` and wrap with `fmt.Errorf(...)`. Rust's `thiserror` auto-generates `Display` and `Error` — like Go's `errors.New()` but with exhaustive pattern matching via `match`.
 
-- [ ] **2.2** Create `crates/chronos-core/src/models.rs`:
+- [x] **2.2** Create `crates/chronos-core/src/models.rs`:
   - `Frame` struct (see Design §3.B):
     ```rust
     pub struct Frame {
@@ -307,14 +307,14 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     - CaptureConfig default values assertion
     - VlmConfig default values assertion
 
-- [ ] **2.3** Update `crates/chronos-core/src/lib.rs` to declare and re-export modules:
+- [x] **2.3** Update `crates/chronos-core/src/lib.rs` to declare and re-export modules:
   ```rust
   pub mod error;
   pub mod models;
   ```
 
-- [ ] **2.4** Run: `cargo test -p chronos-core`
-- [ ] **2.5** Run: `cargo clippy -p chronos-core -- -D warnings`
+- [x] **2.4** Run: `cargo test -p chronos-core`
+- [x] **2.5** Run: `cargo clippy -p chronos-core -- -D warnings`
 
 **Acceptance Criteria:**
 - All model structs compile correctly
@@ -322,11 +322,13 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - Default configs return documented values
 - `cargo test -p chronos-core` → all green
 
-**✋ Pause Point — Wait for user review before proceeding to Step 3.**
+**✅ Step 2 complete — Proceeding to Step 3.**
 
 ---
 
 ### Step 3: Trait Boundaries & Mocks
+
+> 📋 **Detailed tasks:** [`tasks-step-3-trait-boundaries-mocks/`](tasks-step-3-trait-boundaries-mocks/)
 
 **Goal:** Define the `ImageCapture` and `VisionInference` trait abstractions with full mock implementations. This is the decoupling layer that makes the entire system testable without hardware. (See Design §3.A, §6)
 
