@@ -59,6 +59,10 @@ impl OllamaVision {
 
 #[async_trait]
 impl VisionInference for OllamaVision {
+    // [JUSTIFIED GAP] This method interacts directly with the local Ollama HTTP API.
+    // Full verification requires a running Ollama instance or complex HTTP mocking
+    // (e.g. wiremock), which is out of scope for the current MVP Phase.
+    // The internal logic (parsing) is covered by unit tests.
     async fn analyze_frame(&self, frame: &Frame) -> Result<SemanticLog> {
         // 1. Base64-encode the image data
         let base64_image = general_purpose::STANDARD.encode(&frame.image_data);
@@ -108,6 +112,8 @@ impl VisionInference for OllamaVision {
             response: String,
         }
 
+        // [JUSTIFIED GAP] Error mapping for third-party reqwest/serde_json failures
+        // are difficult to trigger in a unit test without a mock HTTP server.
         let ollama_res: OllamaResponse = response.json().await.map_err(|e| {
             chronos_core::error::ChronosError::Inference(format!(
                 "Failed to parse Ollama response JSON: {}",

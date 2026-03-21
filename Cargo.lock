@@ -502,11 +502,15 @@ dependencies = [
 name = "chronos-inference"
 version = "0.3.0"
 dependencies = [
+ "async-trait",
  "base64",
+ "chrono",
  "chronos-core",
  "reqwest",
+ "serde",
  "serde_json",
  "tokio",
+ "ulid",
 ]
 
 [[package]]
