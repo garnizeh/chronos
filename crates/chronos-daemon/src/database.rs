@@ -36,9 +36,10 @@ impl Database {
 
     /// Create an in-memory database for testing purposes.
     /// Useful for isolated, fast integration tests.
+    /// Using a shared cache ensure all pool connections see the same data.
     pub async fn new_in_memory() -> Result<Self, chronos_core::error::ChronosError> {
-        // sqlx uses ":memory:" for in-memory SQLite
-        Self::new("sqlite::memory:").await
+        // sqlx uses ":memory:" for in-memory SQLite, but shared cache is better for pools
+        Self::new("sqlite:file::memory:?mode=memory&cache=shared").await
     }
 
     /// Insert a new SemanticLog into the database.
