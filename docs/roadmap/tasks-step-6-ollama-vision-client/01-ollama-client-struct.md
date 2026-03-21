@@ -6,22 +6,24 @@
 
 ## Implementation Steps
 
-- [ ] Ensure `reqwest` is configured with JSON features in `crates/chronos-inference/Cargo.toml`.
-- [ ] Create `crates/chronos-inference/src/ollama.rs`.
-- [ ] Define `OllamaVision` struct:
+- [x] Ensure `reqwest` is configured with JSON features in `crates/chronos-inference/Cargo.toml`.
+- [x] Create `crates/chronos-inference/src/ollama.rs`.
+- [x] Define `OllamaVision` struct:
   - `client: reqwest::Client`
   - `config: VlmConfig` (from `chronos-core::models`)
-- [ ] Implement `OllamaVision::new(config: VlmConfig) -> Self`:
+- [x] Implement `OllamaVision::new(config: VlmConfig) -> Result<Self>`:
   - Create the `reqwest::Client` applying the `config.timeout_seconds` using `.timeout()`.
-- [ ] Write `#[cfg(test)]` case:
-  - `test_ollama_vision_creation` — verify struct construction with default `VlmConfig` without panicking.
-- [ ] Run `cargo check -p chronos-inference` and ensure it compiles.
-- [ ] Stage changes and execute the commit.
+  - Propagate errors using `map_err` and `?` to avoid `.expect()` in production code.
+- [x] Write `#[cfg(test)]` case:
+  - `test_ollama_vision_creation` — verify struct construction with default `VlmConfig` using `.unwrap()` in the test.
+- [x] Run `cargo check -p chronos-inference` and ensure it compiles.
+- [x] Stage changes and execute the commit.
 
 ## Code Scaffolding
 
 ```rust
 use chronos_core::models::VlmConfig;
+use chronos_core::error::Result;
 
 pub struct OllamaVision {
     client: reqwest::Client,
@@ -29,12 +31,12 @@ pub struct OllamaVision {
 }
 
 impl OllamaVision {
-    pub fn new(config: VlmConfig) -> Self {
-        // Construct the client
+    pub fn new(config: VlmConfig) -> Result<Self> {
+        // Construct the client and return Result
         todo!()
     }
 }
 ```
 
 ## Conventional Commit
-`feat(chronos-inference): define OllamaVision struct and HTTP client setup`
+`feat(chronos-inference): define OllamaVision struct and Result-based HTTP client setup`

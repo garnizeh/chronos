@@ -542,15 +542,14 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     - `test_ollama_http_timeout` — mock server delays, verify `ChronosError::Timeout`
     - `test_ollama_http_500` — mock server returns 500, verify `ChronosError::Inference`
 
-  > For v0.1, JSON parsing tests are sufficient. Full HTTP mocking with `wiremock` can be added as a follow-up or gated behind a `test-http` feature.
-
-- [ ] **6.4** Update `crates/chronos-inference/src/lib.rs`:
+- [x] **6.4** Update `crates/chronos-inference/src/lib.rs`:
   ```rust
   pub mod ollama;
   ```
 
-- [ ] **6.5** Run: `cargo test -p chronos-inference`
-- [ ] **6.6** Run: `cargo clippy -p chronos-inference -- -D warnings`
+- [x] **6.5** Run: `cargo test -p chronos-inference`
+- [x] **6.6** Run: `cargo clippy -p chronos-inference -- -D warnings`
+- [x] **6.7** Integrate `wiremock` for full HTTP coverage in `ollama.rs`
 
 **Acceptance Criteria:**
 - JSON parsing (valid, malformed, partial) tests all pass

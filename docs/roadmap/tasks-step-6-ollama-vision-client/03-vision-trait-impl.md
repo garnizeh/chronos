@@ -6,20 +6,25 @@
 
 ## Implementation Steps
 
-- [ ] Ensure `base64` crate is in dependencies for `chronos-inference`.
-- [ ] In `crates/chronos-inference/src/ollama.rs`, add `#[async_trait]` and `impl VisionInference for OllamaVision`.
-- [ ] Implement `async fn analyze_frame(&self, frame: &Frame) -> Result<SemanticLog>`:
+- [x] Ensure `base64` crate is in dependencies for `chronos-inference`.
+- [x] In `crates/chronos-inference/src/ollama.rs`, add `#[async_trait]` and `impl VisionInference for OllamaVision`.
+- [x] Implement `async fn analyze_frame(&self, frame: &Frame) -> Result<SemanticLog>`:
   - Base64-encode the `frame.image_data`.
   - Build the JSON request body targeting Ollama's `/api/generate` endpoint format (model, prompt, images, stream: false, format: json).
   - Issue the `POST` request to `{config.ollama_host}/api/generate`.
   - Extract the raw JSON text from the response.
   - Call the `parse_vlm_response` helper created in Task 6.2.
   - Map the results into a fully formed `SemanticLog` returning `Ok()`.
-- [ ] Handle errors: Map `reqwest` HTTP/Timeout errors to `ChronosError::Inference` and `ChronosError::Timeout` via `Result` map hooks or `From` implementations.
-- [ ] Write `#[cfg(test)]` case (optional but recommended if wiremock is added, otherwise skip HTTP tests for now per the roadmap).
-- [ ] Run `cargo check -p chronos-inference`.
-- [ ] Run `cargo fmt --all`.
-- [ ] Stage changes and execute the commit.
+- [x] Handle errors: Map `reqwest` HTTP/Timeout errors to `ChronosError::Inference` and `ChronosError::Timeout` via `Result` map hooks.
+- [x] Integrate `wiremock` to achieve 100% pragmatic coverage:
+  - `test_analyze_frame_success`
+  - `test_analyze_frame_ollama_error`
+  - `test_analyze_frame_timeout`
+  - `test_analyze_frame_malformed_outer_json`
+  - `test_analyze_frame_connection_error`
+- [x] Run `cargo check -p chronos-inference`.
+- [x] Run `cargo fmt --all`.
+- [x] Stage changes and execute the commit.
 
 ## Code Scaffolding
 
@@ -43,4 +48,4 @@ impl VisionInference for OllamaVision {
 ```
 
 ## Conventional Commit
-`feat(chronos-inference): implement VisionInference trait for OllamaVision HTTP client`
+`feat(chronos-inference): implement VisionInference trait with 100% wiremock coverage`
