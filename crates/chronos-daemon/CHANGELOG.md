@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.5.1](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.5.0...chronos-daemon-v0.5.1) (2026-03-21)
+
 ## [0.5.0](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.4.0...chronos-daemon-v0.5.0) (2026-03-21)
 
 
