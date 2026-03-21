@@ -54,33 +54,20 @@ impl X11Capture {
                     Ok(primary) => {
                         match primary.capture_image() {
                             Ok(image) => {
-                                let width = image.width();
-                                let height = image.height();
-
-                                // Encode to PNG purely in RAM (no SSD wear/tear - Architecture Rule)
-                                let mut buffer = Vec::new();
-                                if let Err(e) = image.write_to(
-                                    &mut Cursor::new(&mut buffer),
-                                    image::ImageFormat::Png,
-                                ) {
-                                    tracing::error!("Failed to encode PNG for frame capture: {}", e);
-                                } else {
-                                    let frame = Frame {
-                                        id: Ulid::new(),
-                                        timestamp: Utc::now(),
-                                        image_data: buffer,
-                                        width,
-                                        height,
-                                    };
-
-                                    // Send the frame to the async world.
-                                    // Provide back-pressure by handling blocked/closed channels.
-                                    if let Err(e) = tx.blocking_send(frame) {
-                                        tracing::error!(
-                                            "Failed to send frame (receiver likely closed): {}",
-                                            e
-                                        );
-                                        break;
+                                match Self::encode_image_to_frame(image) {
+                                    Ok(frame) => {
+                                        // Send the frame to the async world. 
+                                        // Provide back-pressure by handling blocked/closed channels.
+                                        if let Err(e) = tx.blocking_send(frame) {
+                                            tracing::error!(
+                                                "Failed to send frame (receiver likely closed): {}",
+                                                e
+                                            );
+                                            break;
+                                        }
+                                    }
+                                    Err(e) => {
+                                        tracing::error!("Failed to encode captured image: {}", e);
                                     }
                                 }
                             }
@@ -100,6 +87,7 @@ impl X11Capture {
         })
     }
 
+
     /// Helper to find the primary monitor among all available monitors.
     fn find_primary_monitor() -> Result<Monitor> {
         let monitors = Monitor::all().map_err(|e| {
@@ -111,6 +99,28 @@ impl X11Capture {
             .find(|m| m.is_primary().unwrap_or(false))
             .ok_or_else(|| ChronosError::Capture("No primary monitor detected".to_string()))
     }
+
+    /// Encodes a raw image buffer into a structured PNG `Frame`.
+    /// This is an internal helper to centralize the encoding logic and
+    /// allow unit testing without a live screen capture environment.
+    fn encode_image_to_frame(image: image::RgbaImage) -> Result<Frame> {
+        let width = image.width();
+        let height = image.height();
+
+        // Encode to PNG purely in RAM (no SSD wear/tear - Architecture Rule)
+        let mut buffer = Vec::new();
+        image
+            .write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)
+            .map_err(|e| ChronosError::Capture(format!("Failed to encode PNG: {}", e)))?;
+
+        Ok(Frame {
+            id: Ulid::new(),
+            timestamp: Utc::now(),
+            image_data: buffer,
+            width,
+            height,
+        })
+    }
 }
 
 #[async_trait]
@@ -120,27 +130,11 @@ impl ImageCapture for X11Capture {
     async fn capture_frame(&self) -> Result<Frame> {
         let handle = tokio::task::spawn_blocking(move || -> Result<Frame> {
             let primary = Self::find_primary_monitor()?;
-
             let image = primary
                 .capture_image()
                 .map_err(|e| ChronosError::Capture(format!("Failed to capture image: {}", e)))?;
 
-            let width = image.width();
-            let height = image.height();
-
-            // Encode to PNG bytes in RAM
-            let mut buffer = Vec::new();
-            image
-                .write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)
-                .map_err(|e| ChronosError::Capture(format!("Failed to encode PNG: {}", e)))?;
-
-            Ok(Frame {
-                id: Ulid::new(),
-                timestamp: Utc::now(),
-                image_data: buffer,
-                width,
-                height,
-            })
+            Self::encode_image_to_frame(image)
         });
 
         match handle.await {
@@ -169,5 +163,24 @@ mod tests {
             capture.config.ring_buffer_capacity,
             config.ring_buffer_capacity
         );
+    }
+
+    #[test]
+    fn test_encode_image_to_frame() {
+        use image::{Rgba, RgbaImage};
+
+        // Create a 2x2 dummy image
+        let mut img = RgbaImage::new(2, 2);
+        img.put_pixel(0, 0, Rgba([255, 0, 0, 255]));
+
+        let result = X11Capture::encode_image_to_frame(img);
+        assert!(result.is_ok());
+
+        let frame = result.unwrap();
+        assert_eq!(frame.width, 2);
+        assert_eq!(frame.height, 2);
+        assert!(!frame.image_data.is_empty());
+        // Simple PNG header check
+        assert_eq!(&frame.image_data[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
     }
 }
