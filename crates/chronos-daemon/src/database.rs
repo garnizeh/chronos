@@ -113,6 +113,13 @@ impl Database {
         &self,
         limit: i64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
+        if limit < 0 {
+            return Err(chronos_core::error::ChronosError::InvalidInput(format!(
+                "Limit must be non-negative, got {}",
+                limit
+            )));
+        }
+
         let rows = sqlx::query_as::<_, SemanticLogRow>(
             "SELECT * FROM semantic_logs ORDER BY timestamp DESC LIMIT ?",
         )
@@ -315,10 +322,23 @@ mod tests {
         db.insert_semantic_log(&log_outside).await.unwrap();
 
         let range_logs = db.get_logs_by_date_range(start, end).await.unwrap();
-
         // Should include both start and end (inclusivity check)
         assert_eq!(range_logs.len(), 2);
         assert!(range_logs.iter().any(|l| l.description == "At start"));
         assert!(range_logs.iter().any(|l| l.description == "At end"));
+    }
+
+    #[tokio::test]
+    async fn test_get_recent_logs_invalid_limit() {
+        let db = Database::new_in_memory().await.unwrap();
+        let result = db.get_recent_logs(-1).await;
+
+        assert!(result.is_err());
+        match result {
+            Err(chronos_core::error::ChronosError::InvalidInput(msg)) => {
+                assert!(msg.contains("Limit must be non-negative"));
+            }
+            _ => panic!("Expected ChronosError::InvalidInput, got {:?}", result),
+        }
     }
 }
