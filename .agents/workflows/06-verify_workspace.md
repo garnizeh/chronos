@@ -1,8 +1,8 @@
 ---
-name: Verify Cargo Workspace
 description: Runs the strict compilation and testing suite across the entire Rust monorepo. Use this skill after making structural changes to any crate.
 ---
-# Skill: Verify Workspace
+
+# Workflow: Verify Workspace
 
 **Execution Steps:**
 1. Run `cargo fmt --all -- --check` to verify strict formatting.

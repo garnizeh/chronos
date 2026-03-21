@@ -1,8 +1,8 @@
 ---
-name: Audit Rust Dependencies
 description: Checks the Cargo.lock file for known security vulnerabilities.
 ---
-# Skill: Audit Dependencies
+
+# Workflow: Audit Dependencies
 
 **Execution Steps:**
 1. Check if `cargo-audit` is installed. If not, ask the user for permission to run `cargo install cargo-audit`.

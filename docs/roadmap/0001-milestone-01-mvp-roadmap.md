@@ -2,7 +2,7 @@
 
 > **Source of truth:** [`docs/design/0001-chronos-personal-context-engine.md`](../design/0001-chronos-personal-context-engine.md)  
 > **Prompt spec:** [`docs/prompt/0001-milestone-01-mvp.md`](../prompt/0001-milestone-01-mvp.md)  
-> **Status:** In Progress — Step 0 ✅ complete
+> **Status:** In Progress — Step 2
 
 ---
 
@@ -171,7 +171,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ---
 
-### Step 1: Workspace Skeleton
+### Step 1: Workspace Skeleton ✅
 
 > 📋 **Detailed tasks:** [`tasks-step-1-workspace-skeleton/`](tasks-step-1-workspace-skeleton/)
 
@@ -183,48 +183,48 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **1.1** Create root `Cargo.toml` with `[workspace]` definition listing all 4 member crates
-- [ ] **1.2** Create `crates/chronos-core/Cargo.toml` with initial dependencies:
+- [x] **1.1** Create root `Cargo.toml` with `[workspace]` definition listing all 4 member crates
+- [x] **1.2** Create `crates/chronos-core/Cargo.toml` with initial dependencies:
   - `serde = { version = "1", features = ["derive"] }`
   - `serde_json = "1"`
   - `chrono = { version = "0.4", features = ["serde"] }`
   - `thiserror = "2"`
   - `uuid = { version = "1", features = ["v4", "serde"] }`
-- [ ] **1.3** Create `crates/chronos-core/src/lib.rs` with empty module declarations
-- [ ] **1.4** Create `crates/chronos-capture/Cargo.toml` with dependencies:
+- [x] **1.3** Create `crates/chronos-core/src/lib.rs` with empty module declarations
+- [x] **1.4** Create `crates/chronos-capture/Cargo.toml` with dependencies:
   - `chronos-core = { path = "../chronos-core" }`
   - `xcap = "0.0.13"` (or latest)
   - `tokio = { version = "1", features = ["sync"] }`  _(channel only — no full runtime)_
-- [ ] **1.5** Create `crates/chronos-capture/src/lib.rs` stub
-- [ ] **1.6** Create `crates/chronos-inference/Cargo.toml` with dependencies:
+- [x] **1.5** Create `crates/chronos-capture/src/lib.rs` stub
+- [x] **1.6** Create `crates/chronos-inference/Cargo.toml` with dependencies:
   - `chronos-core = { path = "../chronos-core" }`
   - `reqwest = { version = "0.12", features = ["json"] }`
   - `serde_json = "1"`
   - `base64 = "0.22"`
   - `tokio = { version = "1", features = ["full"] }`
-- [ ] **1.7** Create `crates/chronos-inference/src/lib.rs` stub
-- [ ] **1.8** Create `crates/chronos-daemon/Cargo.toml` with dependencies:
+- [x] **1.7** Create `crates/chronos-inference/src/lib.rs` stub
+- [x] **1.8** Create `crates/chronos-daemon/Cargo.toml` with dependencies:
   - `chronos-core = { path = "../chronos-core" }`
   - `chronos-capture = { path = "../chronos-capture" }`
   - `chronos-inference = { path = "../chronos-inference" }`
   - `tokio = { version = "1", features = ["full"] }`
   - `sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }`
   - `clap = { version = "4", features = ["derive"] }`
-- [ ] **1.9** Create `crates/chronos-daemon/src/main.rs` with a `fn main() { println!("chronos v0.1"); }`
-- [ ] **1.10** Create `.gitignore` (standard Rust: `/target`, `*.swp`, etc.)
-- [ ] **1.11** Run: `cargo check --workspace`
-- [ ] **1.12** Run: `cargo fmt --all -- --check`
-- [ ] **1.13** Run: `cargo clippy --workspace --all-targets -- -D warnings`
+- [x] **1.9** Create `crates/chronos-daemon/src/main.rs` with a `fn main() { println!("chronos v0.1"); }`
+- [x] **1.10** Create `.gitignore` (standard Rust: `/target`, `*.swp`, etc.)
+- [x] **1.11** Run: `cargo check --workspace`
+- [x] **1.12** Run: `cargo fmt --all -- --check`
+- [x] **1.13** Run: `cargo clippy --workspace --all-targets -- -D warnings`
 
-**Acceptance Criteria:**
-- `cargo check --workspace` → success (exit 0)
-- `cargo clippy --workspace --all-targets -- -D warnings` → clean
-- `cargo fmt --all -- --check` → no formatting issues
-- All 4 crates visible in workspace members
+**Acceptance Criteria:** ✅ All met
+- ✅ `cargo check --workspace` → success (exit 0)
+- ✅ `cargo clippy --workspace --all-targets -- -D warnings` → clean
+- ✅ `cargo fmt --all -- --check` → no formatting issues
+- ✅ All 4 crates visible in workspace members
 
 > **Go parallel:** This is equivalent to `go mod init` + creating empty `package` files so `go build ./...` works. The `[workspace]` in Cargo.toml is like a Go workspace (`go.work`).
 
-**✋ Pause Point — Wait for user review before proceeding to Step 2.**
+**✅ Step 1 complete — Proceeding to Step 2.**
 
 ---
 
