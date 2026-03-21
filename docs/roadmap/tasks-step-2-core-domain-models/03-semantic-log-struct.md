@@ -32,6 +32,6 @@ pub struct SemanticLog {
 ```
 
 **Conventional Commit:**
-```
+```text
 feat(chronos-core): add SemanticLog serialization model
 ```
