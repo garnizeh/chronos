@@ -25,6 +25,12 @@ struct VlmJsonResponse {
     confidence_score: f64,
 }
 
+const SCREENSHOT_PROMPT: &str = "Analyze this screenshot. Provide a structured JSON response with the following fields: \
+                  description (brief summary), active_application (name of the window in focus), \
+                  activity_category (e.g., Development, Communication, Browsing), \
+                  key_entities (list of relevant technologies, names, or topics), \
+                  confidence_score (0.0 to 1.0).";
+
 impl OllamaVision {
     /// Create a new OllamaVision client from configuration.
     /// Sets the HTTP timeout based on VLM configuration.
@@ -71,15 +77,9 @@ impl VisionInference for OllamaVision {
         let base64_image = general_purpose::STANDARD.encode(&frame.image_data);
 
         // 2. Build the request body for Ollama
-        let prompt = "Analyze this screenshot. Provide a structured JSON response with the following fields: \
-                      description (brief summary), active_application (name of the window in focus), \
-                      activity_category (e.g., Development, Communication, Browsing), \
-                      key_entities (list of relevant technologies, names, or topics), \
-                      confidence_score (0.0 to 1.0).";
-
         let body = json!({
             "model": self.config.model_name,
-            "prompt": prompt,
+            "prompt": SCREENSHOT_PROMPT,
             "images": [base64_image],
             "stream": false,
             "format": "json"
@@ -215,15 +215,9 @@ mod tests {
             }"#
         });
 
-        let prompt = "Analyze this screenshot. Provide a structured JSON response with the following fields: \
-                      description (brief summary), active_application (name of the window in focus), \
-                      activity_category (e.g., Development, Communication, Browsing), \
-                      key_entities (list of relevant technologies, names, or topics), \
-                      confidence_score (0.0 to 1.0).";
-
         let expected_body = json!({
             "model": "test-model",
-            "prompt": prompt,
+            "prompt": SCREENSHOT_PROMPT,
             "images": [general_purpose::STANDARD.encode(vec![0, 1, 2, 3])],
             "stream": false,
             "format": "json"
@@ -351,9 +345,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_analyze_frame_connection_error() {
-        // Use a deterministic unroutable test address
+        // Use a localhost closed port and short timeout for fast/deterministic failure
         let config = VlmConfig {
-            ollama_host: "http://10.255.255.1:12345".to_string(),
+            ollama_host: "http://127.0.0.1:54321".to_string(),
+            timeout_seconds: 1,
             ..VlmConfig::default()
         };
         let vision = OllamaVision::new(config).unwrap();
