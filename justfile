@@ -150,11 +150,9 @@ set shell := ["bash", "-c"]
     cargo fmt --all -- --check
     echo -e "\n2. Running security audit (cargo-deny)..."
     cargo deny check
-    echo -e "\n3. Running strict linter..."
+    echo -e "\n3. Running strict linter (includes offline SQLx verification)..."
     cargo clippy --workspace --all-targets -- -D warnings
-    echo -e "\n4. Checking SQLx offline queries metadata..."
-    cargo sqlx prepare --workspace --check
-    echo -e "\n5. Running test suite with nextest..."
+    echo -e "\n4. Running test suite with nextest..."
     cargo nextest run --workspace
     echo -e "\n✅ All local CI checks passed! Safe to commit."
 

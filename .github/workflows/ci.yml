@@ -81,18 +81,11 @@ jobs:
         with:
           components: clippy
 
-      # Install sqlx-cli to check offline queries
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: sqlx-cli
-
       # Reason: Caches the Cargo registry and compiled artifacts to avoid rebuilding the entire dependency tree.
       # Go Equivalent: Caching the `$GOPATH/pkg/mod` and `~/.cache/go-build` directories in CI.
       - uses: Swatinem/rust-cache@v2
-
-      # Check if developer forgot to run `cargo sqlx prepare`
-      - name: Check sqlx queries (offline)
-        run: cargo sqlx prepare --workspace --check
+        with:
+          shared-key: "chronos-cache"
 
       # Reason: Runs the official Rust linter across the workspace. `-D warnings` enforces zero-tolerance for warnings.
       # Go Equivalent: Running `go vet` and `staticcheck` (or `golangci-lint`) configured to fail on any warning.
@@ -101,13 +94,11 @@ jobs:
 
   # ────────────────────────────────────────────────────────────────────────────
   # TEST & COVERAGE (nextest)
-  # Reason: Runs only after format, security, and lint all pass.
-  # This prevents wasting expensive runner minutes on the longest job
-  # when a PR has trivially broken formatting or a security advisory.
+  # Reason: Runs in parallel with clippy and security because GitHub Actions
+  # provides unlimited minutes for public open-source repositories.
   # ────────────────────────────────────────────────────────────────────────────
   coverage:
     name: test + coverage
-    needs: [format, security, clippy]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -130,6 +121,8 @@ jobs:
       - uses: taiki-e/install-action@cargo-nextest
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "chronos-cache"
 
       # Reason: Runs the test suite using nextest with LLVM instrumentation enabled.
       # Go Equivalent: Running `go test -coverprofile=coverage.out ./...`
