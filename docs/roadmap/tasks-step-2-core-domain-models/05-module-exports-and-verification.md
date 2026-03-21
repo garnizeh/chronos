@@ -18,6 +18,6 @@ pub mod models;
 ```
 
 **Conventional Commit:**
-```
+```text
 chore(chronos-core): export error and models modules
 ```

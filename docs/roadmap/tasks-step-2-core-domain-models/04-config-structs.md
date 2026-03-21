@@ -34,6 +34,6 @@ impl Default for CaptureConfig {
 ```
 
 **Conventional Commit:**
-```
+```text
 feat(chronos-core): add default configs for capture and vlm
 ```
