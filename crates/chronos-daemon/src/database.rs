@@ -382,21 +382,30 @@ mod tests {
             VALUES ('not-a-ulid', '2023-01-01T00:00:00Z', '01GD6Q3B86Y4G1C6EM86YXAK8F', 'd', 'a', 'c', '[]', 1.0, 'r')")
             .execute(&db.pool).await.unwrap();
         assert!(db.get_recent_logs(1).await.is_err());
-        sqlx::query("DELETE FROM semantic_logs").execute(&db.pool).await.unwrap();
+        sqlx::query("DELETE FROM semantic_logs")
+            .execute(&db.pool)
+            .await
+            .unwrap();
 
         // 2. Invalid Timestamp
         sqlx::query("INSERT INTO semantic_logs (id, timestamp, source_frame_id, description, active_application, activity_category, key_entities, confidence_score, raw_vlm_response) 
             VALUES ('01GD6Q3B86Y4G1C6EM86YXAK8F', 'invalid-date', '01GD6Q3B86Y4G1C6EM86YXAK8F', 'd', 'a', 'c', '[]', 1.0, 'r')")
             .execute(&db.pool).await.unwrap();
         assert!(db.get_recent_logs(1).await.is_err());
-        sqlx::query("DELETE FROM semantic_logs").execute(&db.pool).await.unwrap();
+        sqlx::query("DELETE FROM semantic_logs")
+            .execute(&db.pool)
+            .await
+            .unwrap();
 
         // 3. Invalid Source Frame ID
         sqlx::query("INSERT INTO semantic_logs (id, timestamp, source_frame_id, description, active_application, activity_category, key_entities, confidence_score, raw_vlm_response) 
             VALUES ('01GD6Q3B86Y4G1C6EM86YXAK8F', '2023-01-01T00:00:00Z', 'not-a-ulid', 'd', 'a', 'c', '[]', 1.0, 'r')")
             .execute(&db.pool).await.unwrap();
         assert!(db.get_recent_logs(1).await.is_err());
-        sqlx::query("DELETE FROM semantic_logs").execute(&db.pool).await.unwrap();
+        sqlx::query("DELETE FROM semantic_logs")
+            .execute(&db.pool)
+            .await
+            .unwrap();
 
         // 4. Invalid Key Entities (JSON)
         sqlx::query("INSERT INTO semantic_logs (id, timestamp, source_frame_id, description, active_application, activity_category, key_entities, confidence_score, raw_vlm_response) 
