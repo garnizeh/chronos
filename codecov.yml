@@ -1,0 +1,41 @@
+# ==============================================================================
+# Chronos - Codecov Configuration
+# ==============================================================================
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+
+  status:
+    project:
+      default:
+        # The overall project must maintain at least 80% coverage.
+        target: 80%
+        # We allow a tiny 1% drop to prevent the CI from blocking 
+        # a massive refactor that deletes heavily tested legacy code.
+        threshold: 1%
+        
+    patch:
+      default:
+        # THE PRAGMATIC GATEKEEPER:
+        # Any NEW lines of code introduced in a Pull Request must be 90% covered.
+        # This guarantees technical debt never increases over time.
+        target: 90%
+
+# Ignore files that do not contain core business logic or are 
+# inherently impossible to unit-test without side effects.
+ignore:
+  - "tests/**/*"             # Integration tests shouldn't count towards their own coverage
+  - "benches/**/*"           # Performance benchmarks
+  - "examples/**/*"          # Example code
+  - ".sqlx/**/*"             # Cached SQLx metadata
+  - "**/migrations/**/*"     # Raw SQL migration files
+  - "**/main.rs"             # The entry point is pure wire-up logic; it requires E2E testing, not unit testing.
+  - "**/build.rs"            # Build scripts run before compilation
+
+comment:
+  # Keep the PR comment clean and strictly technical
+  layout: "header, changes, diff"
+  behavior: default
+  require_changes: false
