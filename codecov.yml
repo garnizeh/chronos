@@ -10,32 +10,33 @@ coverage:
   status:
     project:
       default:
-        # The overall project must maintain at least 80% coverage.
-        target: 80%
-        # We allow a tiny 1% drop to prevent the CI from blocking 
-        # a massive refactor that deletes heavily tested legacy code.
+        # The overall project must maintain at least 85% coverage (we are currently at ~95%).
+        target: 85%
+        # Threshold: allow a tiny 1% drop before failing (to prevent strictly numerical noise).
         threshold: 1%
         
     patch:
       default:
         # THE PRAGMATIC GATEKEEPER:
-        # Any NEW lines of code introduced in a Pull Request must be 90% covered.
-        # This guarantees technical debt never increases over time.
+        # Any NEW code introduced MUST be 90% covered (or explicitly justified in comments).
         target: 90%
 
 # Ignore files that do not contain core business logic or are 
 # inherently impossible to unit-test without side effects.
 ignore:
-  - "tests/**/*"             # Integration tests shouldn't count towards their own coverage
+  - "target/**/*"            # Build artifacts
+  - "tests/**/*"             # Integration tests
   - "benches/**/*"           # Performance benchmarks
   - "examples/**/*"          # Example code
   - ".sqlx/**/*"             # Cached SQLx metadata
   - "**/migrations/**/*"     # Raw SQL migration files
-  - "**/main.rs"             # The entry point is pure wire-up logic; it requires E2E testing, not unit testing.
-  - "**/build.rs"            # Build scripts run before compilation
+  - "crates/chronos-daemon/src/main.rs" # Entry point is pure wire-up logic
+  - ".agents/**/*"           # Agent workflows and rules
+  - "docs/**/*"              # Documentation and roadmap
+  - ".github/**/*"           # CI/CD configurations
 
 comment:
   # Keep the PR comment clean and strictly technical
-  layout: "header, changes, diff"
+  layout: "header, diff, changes"
   behavior: default
   require_changes: false

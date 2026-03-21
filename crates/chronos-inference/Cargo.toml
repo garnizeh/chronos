@@ -9,6 +9,13 @@ license.workspace = true
 [dependencies]
 chronos-core = { path = "../chronos-core" }
 reqwest = { version = "0.13.2", default-features = false, features = ["json", "rustls"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 base64 = "0.22.1"
 tokio = { version = "1.50.0", features = ["full"] }
+async-trait = "0.1.89"
+ulid = { version = "1.2.1", features = ["serde"] }
+chrono = { version = "0.4.44", features = ["serde"] }
+
+[dev-dependencies]
+wiremock = "0.6"

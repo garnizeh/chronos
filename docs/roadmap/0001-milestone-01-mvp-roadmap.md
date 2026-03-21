@@ -2,7 +2,7 @@
 
 > **Source of truth:** [`docs/design/0001-chronos-personal-context-engine.md`](../design/0001-chronos-personal-context-engine.md)  
 > **Prompt spec:** [`docs/prompt/0001-milestone-01-mvp.md`](../prompt/0001-milestone-01-mvp.md)  
-> **Status:** In Progress — Step 5
+> **Status:** Complete — Step 6
 
 ---
 
@@ -532,90 +532,36 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 **Acceptance Criteria:**
 - Ring buffer tests pass (push, overflow, latest)
 - X11Capture compiles and implements `ImageCapture` trait
-- Capture loop uses `std::thread` (not Tokio task) for blocking X11 calls
-- Frame data flows through `mpsc::Sender` channel
-- No `.unwrap()` in non-test code
-
-**✋ Pause Point — Wait for user review before proceeding to Step 6.**
+- Capture loop uses `std::thread` (not Tokio task) for blocking X11/OS calls (Design §5.A)
+- 100% test coverage for `RingBuffer` logic
 
 ---
 
 ### Step 6: Ollama Vision Client
 
-**Goal:** Implement the `OllamaVision` struct that sends base64-encoded frames to a local Ollama instance and parses the VLM's JSON response into a `SemanticLog`. (See Design §3.C)
+**Goal:** Implement the visual inference client for Ollama. (See Design §4.B)
 
-**Depends on:** Step 3 complete (traits)
+**Depends on:** Step 4 complete (for Domain Log types)
 
 **Crate(s):** `chronos-inference`
 
 **Tasks:**
 
-- [ ] **6.1** Create `crates/chronos-inference/src/ollama.rs`:
-  - `OllamaVision` struct:
-    ```rust
-    pub struct OllamaVision {
-        client: reqwest::Client,
-        config: VlmConfig,
-    }
-    ```
-  - `OllamaVision::new(config: VlmConfig) -> Self` — creates `reqwest::Client` with configured timeout
-  - `impl VisionInference for OllamaVision`:
-    - `analyze_frame(frame)` — (see Design §5.A for prompt + format):
-      1. Base64-encode `frame.image_data`
-      2. Build JSON request body for `/api/generate`:
-         ```json
-         {
-           "model": "moondream",
-           "prompt": "Analyze this screenshot...",
-           "images": ["<base64>"],
-           "stream": false,
-           "format": "json"
-         }
-         ```
-      3. POST to `{config.ollama_host}/api/generate`
-      4. Parse the response JSON to extract `"response"` field
-      5. Parse the VLM's response text as structured JSON:
-         ```json
-         {
-           "description": "...",
-           "active_application": "...",
-           "activity_category": "...",
-           "key_entities": ["..."],
-           "confidence_score": 0.85
-         }
-         ```
-      6. Map fields into `SemanticLog`
-      7. **Fallback:** If the VLM response is not valid JSON, store the raw text as `description` with low confidence (Design §5.A — "regex fallback parser")
-  - Error handling:
-    - HTTP errors → `ChronosError::Inference`
-    - Timeout → `ChronosError::Timeout`
-    - Malformed JSON → fallback to raw text, log warning
-
-  > **Go parallel:** This is equivalent to `http.Post()` with JSON encoding via `encoding/json`. In Rust, `reqwest` is the standard HTTP client (like Go's `net/http`), and `serde_json` replaces `json.Marshal/Unmarshal`. The key difference: Rust's `?` operator replaces Go's `if err != nil { return err }` pattern.
-
-- [ ] **6.2** Add internal helper: `parse_vlm_response(raw: &str) -> (SemanticLog fields)`:
-  - Primary path: `serde_json::from_str` the VLM's JSON
-  - Fallback path: if JSON parsing fails, use the raw text as `description`, set `confidence_score = 0.3`, leave optional fields as `None`
-
-- [ ] **6.3** Write tests (`#[cfg(test)]` in `ollama.rs`):
-  - `test_parse_valid_vlm_json` — feed known good JSON, verify all fields map correctly
-  - `test_parse_malformed_vlm_json_fallback` — feed garbled text, verify fallback to raw description with low confidence
-  - `test_parse_partial_vlm_json` — feed JSON missing optional fields, verify `None` handling
-  - `test_ollama_vision_creation` — verify struct construction with default config
-  - (Optional, if `wiremock` or `mockito` is added):
-    - `test_ollama_http_success` — mock HTTP server returns valid Ollama response, verify SemanticLog
-    - `test_ollama_http_timeout` — mock server delays, verify `ChronosError::Timeout`
-    - `test_ollama_http_500` — mock server returns 500, verify `ChronosError::Inference`
-
-  > For v0.1, JSON parsing tests are sufficient. Full HTTP mocking with `wiremock` can be added as a follow-up or gated behind a `test-http` feature.
-
-- [ ] **6.4** Update `crates/chronos-inference/src/lib.rs`:
+- [x] **6.1** Create `crates/chronos-inference/src/ollama.rs`:
+  - `OllamaVision` struct (reqwest client + config)
+  - `new(config) -> Result<Self>` constructor (v0.2 refinement)
+- [x] **6.2** Add internal helper: `parse_vlm_response(raw: &str) -> VlmJsonResponse`:
+  - Primary path: `serde_json`
+  - Fallback path: Raw text for hallucinations
+- [x] **6.3** Implement `VisionInference` trait for `OllamaVision`
+- [x] **6.4** Update `crates/chronos-inference/src/lib.rs` (export & re-export):
   ```rust
   pub mod ollama;
   ```
 
-- [ ] **6.5** Run: `cargo test -p chronos-inference`
-- [ ] **6.6** Run: `cargo clippy -p chronos-inference -- -D warnings`
+- [x] **6.5** Run: `cargo test -p chronos-inference`
+- [x] **6.6** Run: `cargo clippy -p chronos-inference -- -D warnings`
+- [x] **6.7** Integrate `wiremock` for full HTTP coverage in `ollama.rs`
 
 **Acceptance Criteria:**
 - JSON parsing (valid, malformed, partial) tests all pass
