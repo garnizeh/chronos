@@ -2,7 +2,7 @@
 
 > **Source of truth:** [`docs/design/0001-chronos-personal-context-engine.md`](../design/0001-chronos-personal-context-engine.md)  
 > **Prompt spec:** [`docs/prompt/0001-milestone-01-mvp.md`](../prompt/0001-milestone-01-mvp.md)  
-> **Status:** In Progress — Step 0 ✅ complete
+> **Status:** In Progress — Step 3
 
 ---
 
@@ -33,7 +33,7 @@ Chronos uses a `cargo workspace` with **4 member crates**, each with a single cl
 
 | Crate | Responsibility | Key Dependencies |
 |---|---|---|
-| `chronos-core` | Domain models, traits, error types, shared config | `serde`, `serde_json`, `chrono`, `thiserror`, `uuid` |
+| `chronos-core` | Domain models, traits, error types, shared config | `serde`, `serde_json`, `chrono`, `thiserror`, `ulid` |
 | `chronos-capture` | X11 screen capture, ring buffer, OS thread management | `xcap`, `tokio` (channel only), `chronos-core` |
 | `chronos-inference` | Ollama HTTP client, VLM request/response, JSON parsing | `reqwest`, `serde_json`, `base64`, `tokio`, `chronos-core` |
 | `chronos-daemon` | Main binary — pipeline orchestration, CLI, SQLite, async runtime | `tokio`, `sqlx`, `clap`, `chronos-core`, `chronos-capture`, `chronos-inference` |
@@ -171,7 +171,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ---
 
-### Step 1: Workspace Skeleton
+### Step 1: Workspace Skeleton ✅
 
 > 📋 **Detailed tasks:** [`tasks-step-1-workspace-skeleton/`](tasks-step-1-workspace-skeleton/)
 
@@ -183,52 +183,54 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **1.1** Create root `Cargo.toml` with `[workspace]` definition listing all 4 member crates
-- [ ] **1.2** Create `crates/chronos-core/Cargo.toml` with initial dependencies:
+- [x] **1.1** Create root `Cargo.toml` with `[workspace]` definition listing all 4 member crates
+- [x] **1.2** Create `crates/chronos-core/Cargo.toml` with initial dependencies:
   - `serde = { version = "1", features = ["derive"] }`
   - `serde_json = "1"`
   - `chrono = { version = "0.4", features = ["serde"] }`
   - `thiserror = "2"`
-  - `uuid = { version = "1", features = ["v4", "serde"] }`
-- [ ] **1.3** Create `crates/chronos-core/src/lib.rs` with empty module declarations
-- [ ] **1.4** Create `crates/chronos-capture/Cargo.toml` with dependencies:
+  - `ulid = { version = "1.1", features = ["serde"] }`
+- [x] **1.3** Create `crates/chronos-core/src/lib.rs` with empty module declarations
+- [x] **1.4** Create `crates/chronos-capture/Cargo.toml` with dependencies:
   - `chronos-core = { path = "../chronos-core" }`
   - `xcap = "0.0.13"` (or latest)
-  - `tokio = { version = "1", features = ["sync"] }`  _(channel only — no full runtime)_
-- [ ] **1.5** Create `crates/chronos-capture/src/lib.rs` stub
-- [ ] **1.6** Create `crates/chronos-inference/Cargo.toml` with dependencies:
+  - `tokio = { version = "1", features = ["sync"] }`  *(channel only — no full runtime)*
+- [x] **1.5** Create `crates/chronos-capture/src/lib.rs` stub
+- [x] **1.6** Create `crates/chronos-inference/Cargo.toml` with dependencies:
   - `chronos-core = { path = "../chronos-core" }`
   - `reqwest = { version = "0.12", features = ["json"] }`
   - `serde_json = "1"`
   - `base64 = "0.22"`
   - `tokio = { version = "1", features = ["full"] }`
-- [ ] **1.7** Create `crates/chronos-inference/src/lib.rs` stub
-- [ ] **1.8** Create `crates/chronos-daemon/Cargo.toml` with dependencies:
+- [x] **1.7** Create `crates/chronos-inference/src/lib.rs` stub
+- [x] **1.8** Create `crates/chronos-daemon/Cargo.toml` with dependencies:
   - `chronos-core = { path = "../chronos-core" }`
   - `chronos-capture = { path = "../chronos-capture" }`
   - `chronos-inference = { path = "../chronos-inference" }`
   - `tokio = { version = "1", features = ["full"] }`
   - `sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }`
   - `clap = { version = "4", features = ["derive"] }`
-- [ ] **1.9** Create `crates/chronos-daemon/src/main.rs` with a `fn main() { println!("chronos v0.1"); }`
-- [ ] **1.10** Create `.gitignore` (standard Rust: `/target`, `*.swp`, etc.)
-- [ ] **1.11** Run: `cargo check --workspace`
-- [ ] **1.12** Run: `cargo fmt --all -- --check`
-- [ ] **1.13** Run: `cargo clippy --workspace --all-targets -- -D warnings`
+- [x] **1.9** Create `crates/chronos-daemon/src/main.rs` with a `fn main() { println!("chronos v0.1"); }`
+- [x] **1.10** Create `.gitignore` (standard Rust: `/target`, `*.swp`, etc.)
+- [x] **1.11** Run: `cargo check --workspace`
+- [x] **1.12** Run: `cargo fmt --all -- --check`
+- [x] **1.13** Run: `cargo clippy --workspace --all-targets -- -D warnings`
 
-**Acceptance Criteria:**
-- `cargo check --workspace` → success (exit 0)
-- `cargo clippy --workspace --all-targets -- -D warnings` → clean
-- `cargo fmt --all -- --check` → no formatting issues
-- All 4 crates visible in workspace members
+**Acceptance Criteria:** ✅ All met
+- ✅ `cargo check --workspace` → success (exit 0)
+- ✅ `cargo clippy --workspace --all-targets -- -D warnings` → clean
+- ✅ `cargo fmt --all -- --check` → no formatting issues
+- ✅ All 4 crates visible in workspace members
 
 > **Go parallel:** This is equivalent to `go mod init` + creating empty `package` files so `go build ./...` works. The `[workspace]` in Cargo.toml is like a Go workspace (`go.work`).
 
-**✋ Pause Point — Wait for user review before proceeding to Step 2.**
+**✅ Step 1 complete — Proceeding to Step 2.**
 
 ---
 
-### Step 2: Core Domain Models
+### Step 2: Core Domain Models ✅
+
+> 📋 **Detailed tasks:** [`tasks-step-2-core-domain-models/`](tasks-step-2-core-domain-models/)
 
 **Goal:** Define all shared data types: `Frame`, `SemanticLog`, `CaptureConfig`, `VlmConfig`, and the domain error enum. Validate with serialization round-trip tests.
 
@@ -238,7 +240,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **2.1** Create `crates/chronos-core/src/error.rs`:
+- [x] **2.1** Create `crates/chronos-core/src/error.rs`:
   - Define `ChronosError` enum using `thiserror::Error`:
     - `Capture(String)` — screen capture failures
     - `Inference(String)` — VLM communication errors
@@ -251,11 +253,11 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
   > **Go parallel:** In Go you'd define `var ErrCapture = errors.New("capture")` and wrap with `fmt.Errorf(...)`. Rust's `thiserror` auto-generates `Display` and `Error` — like Go's `errors.New()` but with exhaustive pattern matching via `match`.
 
-- [ ] **2.2** Create `crates/chronos-core/src/models.rs`:
+- [x] **2.2** Create `crates/chronos-core/src/models.rs`:
   - `Frame` struct (see Design §3.B):
     ```rust
     pub struct Frame {
-        pub id: Uuid,
+        pub id: Ulid,
         pub timestamp: DateTime<Utc>,
         pub image_data: Vec<u8>,  // Raw PNG bytes (in RAM only!)
         pub width: u32,
@@ -267,9 +269,9 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - `SemanticLog` struct (see Design §3.D, Table schema):
     ```rust
     pub struct SemanticLog {
-        pub id: Uuid,
+        pub id: Ulid,
         pub timestamp: DateTime<Utc>,
-        pub source_frame_id: Uuid,
+        pub source_frame_id: Ulid,
         pub description: String,
         pub active_application: Option<String>,
         pub activity_category: Option<String>,
@@ -305,14 +307,14 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     - CaptureConfig default values assertion
     - VlmConfig default values assertion
 
-- [ ] **2.3** Update `crates/chronos-core/src/lib.rs` to declare and re-export modules:
+- [x] **2.3** Update `crates/chronos-core/src/lib.rs` to declare and re-export modules:
   ```rust
   pub mod error;
   pub mod models;
   ```
 
-- [ ] **2.4** Run: `cargo test -p chronos-core`
-- [ ] **2.5** Run: `cargo clippy -p chronos-core -- -D warnings`
+- [x] **2.4** Run: `cargo test -p chronos-core`
+- [x] **2.5** Run: `cargo clippy -p chronos-core -- -D warnings`
 
 **Acceptance Criteria:**
 - All model structs compile correctly
@@ -320,11 +322,13 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - Default configs return documented values
 - `cargo test -p chronos-core` → all green
 
-**✋ Pause Point — Wait for user review before proceeding to Step 3.**
+**✅ Step 2 complete — Proceeding to Step 3.**
 
 ---
 
 ### Step 3: Trait Boundaries & Mocks
+
+> 📋 **Detailed tasks:** [`tasks-step-3-trait-boundaries-mocks/`](tasks-step-3-trait-boundaries-mocks/)
 
 **Goal:** Define the `ImageCapture` and `VisionInference` trait abstractions with full mock implementations. This is the decoupling layer that makes the entire system testable without hardware. (See Design §3.A, §6)
 
@@ -372,7 +376,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     impl ImageCapture for MockCapture {
         async fn capture_frame(&self) -> Result<Frame> {
             Ok(Frame {
-                id: Uuid::new_v4(),
+                id: Ulid::new(),
                 timestamp: Utc::now(),
                 image_data: vec![0x89, 0x50, 0x4E, 0x47], // PNG magic bytes
                 width: 1,
@@ -391,7 +395,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     impl VisionInference for MockVision {
         async fn analyze_frame(&self, frame: &Frame) -> Result<SemanticLog> {
             Ok(SemanticLog {
-                id: Uuid::new_v4(),
+                id: Ulid::new(),
                 timestamp: frame.timestamp,
                 source_frame_id: frame.id,
                 description: "User editing code in VSCode".to_string(),
@@ -409,7 +413,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - `test_mock_capture_returns_frame` — verify MockCapture produces a valid Frame with PNG magic bytes
   - `test_mock_vision_returns_semantic_log` — verify MockVision produces a valid SemanticLog with expected fields
   - `test_mock_vision_preserves_frame_id` — verify `source_frame_id` matches the input frame's `id`
-  - `test_mock_capture_unique_ids` — verify two captures produce different UUIDs
+  - `test_mock_capture_unique_ids` — verify two captures produce different ULIDs
   - `test_trait_object_dispatch` — create a `Box<dyn ImageCapture>` from MockCapture, call it, verify it works (proves dynamic dispatch is viable)
 
   > **Go parallel:** These tests are equivalent to testing a Go interface with a stub implementation. The `Box<dyn Trait>` test proves Rust's dynamic dispatch works like Go's implicit interface satisfaction.
@@ -442,9 +446,9 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   ```sql
   -- UP: Create the semantic_logs table (see Design §3.D)
   CREATE TABLE IF NOT EXISTS semantic_logs (
-      id              TEXT PRIMARY KEY NOT NULL,    -- UUID as text
+      id              TEXT PRIMARY KEY NOT NULL,    -- ULID as text
       timestamp       TEXT NOT NULL,                -- ISO 8601
-      source_frame_id TEXT NOT NULL,                -- UUID of the originating frame
+      source_frame_id TEXT NOT NULL,                -- ULID of the originating frame
       description     TEXT NOT NULL,                -- VLM-generated description
       active_application TEXT,                      -- Detected active window
       activity_category  TEXT,                      -- Classified activity type
