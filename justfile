@@ -127,6 +127,7 @@ set shell := ["bash", "-c"]
 
 # Verify that the code compiles with the declared MSRV (1.94)
 @msrv:
+    rustup toolchain list | grep -q "1.94" || rustup toolchain install 1.94
     cargo +1.94 check --workspace
 
 # Generate and open workspace documentation locally
@@ -143,12 +144,12 @@ set shell := ["bash", "-c"]
     echo "Running local CI pipeline (Privacy-First Strict Checks)..."
     echo -e "\n1. Checking formatting..."
     cargo fmt --all -- --check
-    echo -e "\n2. Running strict linter..."
-    cargo clippy --workspace --all-targets -- -D warnings
-    echo -e "\n3. Checking SQLx offline queries metadata..."
-    cargo sqlx prepare --workspace --check
-    echo -e "\n4. Running security audit (cargo-deny)..."
+    echo -e "\n2. Running security audit (cargo-deny)..."
     cargo deny check
+    echo -e "\n3. Running strict linter..."
+    cargo clippy --workspace --all-targets -- -D warnings
+    echo -e "\n4. Checking SQLx offline queries metadata..."
+    cargo sqlx prepare --workspace --check
     echo -e "\n5. Running test suite with nextest..."
     cargo nextest run --workspace
     echo -e "\n✅ All local CI checks passed! Safe to commit."
