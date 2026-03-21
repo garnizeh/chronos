@@ -1,5 +1,5 @@
 fn main() {
-    println!("chronos v0.1");
+    println!("chronos v{}", env!("CARGO_PKG_VERSION"));
 }
 
 #[cfg(test)]
