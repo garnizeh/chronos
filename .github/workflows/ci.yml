@@ -1,0 +1,49 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Chronos CI — runs cargo fmt, clippy, and tests on every push/PR
+# ──────────────────────────────────────────────────────────────────────────────
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  # Fail CI on any rustc/clippy warning — keeps the codebase clean from day 1
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  check:
+    name: fmt + clippy + test
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ─────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── 2. Rust toolchain (stable) ──────────────────────────────────────
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # ── 3. Cargo cache ─────────────────────────────────────────────────
+      #    Caches ~/.cargo/registry, ~/.cargo/git, and target/
+      #    Dramatically speeds up builds after the first run.
+      - uses: Swatinem/rust-cache@v2
+
+      # ── 4. Format check ────────────────────────────────────────────────
+      #    Equivalent to `go fmt` — enforces consistent style.
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+
+      # ── 5. Lint ────────────────────────────────────────────────────────
+      #    Equivalent to `go vet` + `staticcheck` combined.
+      #    -D warnings: treat all warnings as errors.
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # ── 6. Tests ───────────────────────────────────────────────────────
+      #    Runs unit + integration tests across the entire workspace.
+      - name: cargo test
+        run: cargo test --workspace
