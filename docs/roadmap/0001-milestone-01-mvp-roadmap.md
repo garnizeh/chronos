@@ -1,7 +1,7 @@
 # Chronos v0.1 — Milestone 1: MVP/POC Roadmap & Task Breakdown
 
 > **Source of truth:** [`docs/design/0001-chronos-personal-context-engine.md`](../design/0001-chronos-personal-context-engine.md)  
-> **Prompt spec:** [`docs/prompt/0001-phase-01-mvp.md`](../prompt/0001-phase-01-mvp.md)  
+> **Prompt spec:** [`docs/prompt/0001-milestone-01-mvp.md`](../prompt/0001-milestone-01-mvp.md)  
 > **Status:** In Progress — Step 0 ✅ complete
 
 ---
