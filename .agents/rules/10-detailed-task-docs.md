@@ -66,6 +66,7 @@ Before starting, ensure you understand:
 ## Commit Guidance
 
 Suggested commit(s) following `08-conventional-commits.md` and `09-step-workflow.md`.
+**Crucial:** Mark the task checkboxes as complete in this file and in the master roadmap, and stage the documentation changes alongside the code before executing the commit.
 
 ## Acceptance Criteria
 
