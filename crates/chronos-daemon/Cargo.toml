@@ -1,0 +1,12 @@
+[package]
+name = "chronos-daemon"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chronos-core = { path = "../chronos-core" }
+chronos-capture = { path = "../chronos-capture" }
+chronos-inference = { path = "../chronos-inference" }
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
+clap = { version = "4", features = ["derive"] }
