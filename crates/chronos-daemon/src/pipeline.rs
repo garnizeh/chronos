@@ -290,4 +290,44 @@ mod tests {
             "Pipeline should have continued and processed the second frame"
         );
     }
+
+    #[tokio::test]
+    async fn test_full_pipeline_mock_end_to_end() {
+        use chronos_core::traits::mocks::MockCapture;
+        use chronos_core::traits::ImageCapture;
+
+        let db = Database::new_in_memory().await.unwrap();
+        let vision = MockVision;
+        let capture = MockCapture;
+        let engine = CaptureEngine::new(vision, db);
+
+        let (tx, rx) = mpsc::channel(10);
+
+        // 1. Start the pipeline in the background
+        let engine_handle = tokio::spawn(async move {
+            engine.run_pipeline(rx).await.unwrap();
+            engine
+        });
+
+        // 2. Simulate 3 captures using MockCapture
+        for _ in 0..3 {
+            let frame = capture.capture_frame().await.unwrap();
+            tx.send(frame).await.unwrap();
+        }
+
+        // 3. Close channel and wait for pipeline to finish
+        drop(tx);
+        let engine = engine_handle.await.unwrap();
+
+        // 4. Verify results
+        let count = engine.database.get_log_count().await.unwrap();
+        assert_eq!(count, 3);
+
+        // 5. Verify query results (last 10)
+        let logs = engine.database.get_recent_logs(10).await.unwrap();
+        assert_eq!(logs.len(), 3);
+        for log in logs {
+            assert_eq!(log.description, "User editing code in VSCode");
+        }
+    }
 }
