@@ -58,7 +58,9 @@ impl CaptureSource for XcapSource {
         let target = if let Some(p) = primary {
             p
         } else {
-            tracing::warn!("No primary monitor detected; falling back to the first available monitor.");
+            tracing::warn!(
+                "No primary monitor detected; falling back to the first available monitor."
+            );
             first.expect("Monitors list is not empty, so first monitor must exist")
         };
 
