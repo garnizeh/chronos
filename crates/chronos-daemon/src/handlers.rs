@@ -40,7 +40,7 @@ pub async fn handle_query(
             "Querying logs from {} to {} (limit: {})",
             from_dt, to_dt, limit
         );
-        db.get_logs_by_date_range(from_dt, to_dt).await?
+        db.get_logs_by_date_range(from_dt, to_dt, limit).await?
     } else {
         info!("Querying {} most recent logs", limit);
         db.get_recent_logs(limit).await?

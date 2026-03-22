@@ -84,17 +84,26 @@ impl Database {
         Ok(())
     }
 
-    /// Retrieve logs within a specific date range.
+    /// Retrieve logs within a specific date range, up to the specified limit.
     pub async fn get_logs_by_date_range(
         &self,
         from: DateTime<Utc>,
         to: DateTime<Utc>,
+        limit: i64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
+        if limit < 0 {
+            return Err(chronos_core::error::ChronosError::InvalidInput(format!(
+                "Limit must be non-negative, got {}",
+                limit
+            )));
+        }
+
         let rows = sqlx::query_as::<_, SemanticLogRow>(
-            "SELECT * FROM semantic_logs WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp ASC",
+            "SELECT * FROM semantic_logs WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp ASC LIMIT ?",
         )
         .bind(from.to_rfc3339())
         .bind(to.to_rfc3339())
+        .bind(limit)
         .fetch_all(&self.pool)
         .await
         .map_err(|e: sqlx::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
@@ -328,12 +337,46 @@ mod tests {
         db.insert_semantic_log(&log_at_start).await.unwrap();
         db.insert_semantic_log(&log_at_end).await.unwrap();
         db.insert_semantic_log(&log_outside).await.unwrap();
-
-        let range_logs = db.get_logs_by_date_range(start, end).await.unwrap();
         // Should include both start and end (inclusivity check)
+        let range_logs = db.get_logs_by_date_range(start, end, 10).await.unwrap();
         assert_eq!(range_logs.len(), 2);
         assert!(range_logs.iter().any(|l| l.description == "At start"));
         assert!(range_logs.iter().any(|l| l.description == "At end"));
+    }
+
+    #[tokio::test]
+    async fn test_get_logs_by_date_range_with_limit() {
+        let db = Database::new_in_memory().await.unwrap();
+        let now = Utc::now();
+        let start = now - chrono::Duration::try_minutes(10).unwrap();
+        let end = now;
+
+        // Insert 5 logs in range
+        for i in 0..5 {
+            let log = SemanticLog {
+                id: Ulid::new(),
+                timestamp: start + chrono::Duration::try_seconds(i).unwrap(),
+                source_frame_id: Ulid::new(),
+                description: format!("Log {}", i),
+                active_application: None,
+                activity_category: None,
+                key_entities: vec![],
+                confidence_score: 1.0,
+                raw_vlm_response: "".to_string(),
+            };
+            db.insert_semantic_log(&log).await.unwrap();
+        }
+
+        // Query with limit 2
+        let logs = db.get_logs_by_date_range(start, end, 2).await.unwrap();
+        assert_eq!(logs.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_get_logs_by_date_range_invalid_limit() {
+        let db = Database::new_in_memory().await.unwrap();
+        let result = db.get_logs_by_date_range(Utc::now(), Utc::now(), -1).await;
+        assert!(result.is_err());
     }
 
     #[tokio::test]
