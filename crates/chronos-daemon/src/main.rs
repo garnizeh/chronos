@@ -31,18 +31,12 @@ pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Commands::Start => handle_start(cli.db_url).await?,
         Commands::Query { from, to, limit } => {
-            let url = match cli.db_url {
-                Some(url) => url,
-                None => chronos_daemon::handlers::get_default_db_url()?,
-            };
+            let url = resolve_db_url(cli.db_url)?;
             let db = Database::new(&url).await?;
             handle_query(&db, from, to, limit).await?
         }
         Commands::Status => {
-            let url = match cli.db_url {
-                Some(url) => url,
-                None => chronos_daemon::handlers::get_default_db_url()?,
-            };
+            let url = resolve_db_url(cli.db_url)?;
             let db = Database::new(&url).await?;
             handle_status(&db, &url).await?
         }
@@ -61,10 +55,7 @@ async fn handle_start(db_url_override: Option<String>) -> anyhow::Result<()> {
     info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
 
     // 1. Initialize Components
-    let db_url = match db_url_override {
-        Some(url) => url,
-        None => get_database_url()?,
-    };
+    let db_url = resolve_db_url(db_url_override)?;
     info!("Connecting to database: {db_url}");
     let db = Database::new(&db_url).await?;
 
@@ -140,8 +131,12 @@ where
     Ok(())
 }
 
-fn get_database_url() -> anyhow::Result<String> {
-    chronos_daemon::handlers::get_default_db_url()
+/// Resolve the database URL from an optional override or the default system path.
+fn resolve_db_url(url_override: Option<String>) -> anyhow::Result<String> {
+    match url_override {
+        Some(url) => Ok(url),
+        None => chronos_daemon::handlers::get_default_db_url(),
+    }
 }
 
 fn handle_pause() {
@@ -199,8 +194,8 @@ mod tests {
     }
 
     #[test]
-    fn test_get_database_url() {
-        let url = get_database_url().unwrap();
+    fn test_resolve_db_url() {
+        let url = resolve_db_url(None).unwrap();
         assert!(url.starts_with("sqlite://"));
         assert!(url.contains("chronos.db"));
     }
@@ -230,6 +225,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[tracing_test::traced_test]
     async fn test_run_orchestrator_capture_error() {
         use chronos_core::traits::ImageCapture;
         use chronos_core::traits::mocks::MockVision;
@@ -244,8 +240,6 @@ mod tests {
                     "Mock failure".to_string(),
                 ))
             }
-
-            // [JUSTIFIED GAP]: Default implementation used.
         }
 
         let db = Database::new_in_memory().await.unwrap();
@@ -260,5 +254,9 @@ mod tests {
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
         handle.abort();
+
+        // Verify that the error was logged
+        assert!(logs_contain("failed to capture frame"));
+        assert!(logs_contain("Mock failure"));
     }
 }
