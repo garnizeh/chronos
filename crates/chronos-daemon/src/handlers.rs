@@ -1,16 +1,16 @@
 use crate::database::Database;
 use chrono::{DateTime, TimeZone, Utc};
-use std::path::PathBuf;
 use tracing::info;
 
 // [JUSTIFIED GAP]: Involves OS-specific directory resolution (`dirs`) and filesystem side-effects (`create_dir_all`).
 // Refactoring to a trait was considered but deferred to v0.2 to avoid premature abstraction for a simple path resolve.
-pub fn get_default_db_url() -> String {
-    let mut path = dirs::data_local_dir().unwrap_or_else(|| PathBuf::from("."));
+pub fn get_default_db_url() -> anyhow::Result<String> {
+    let mut path = dirs::data_local_dir()
+        .ok_or_else(|| anyhow::anyhow!("Could not find local data directory"))?;
     path.push("chronos");
-    std::fs::create_dir_all(&path).ok();
+    std::fs::create_dir_all(&path)?;
     path.push("chronos.db");
-    format!("sqlite://{}", path.to_string_lossy())
+    Ok(format!("sqlite://{}", path.to_string_lossy()))
 }
 
 /// Handle the 'query' command.

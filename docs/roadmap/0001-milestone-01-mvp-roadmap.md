@@ -718,6 +718,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 - [x] **8.5** Run: `cargo test -p chronos-daemon`
 - [x] **8.6** Run: `cargo clippy -p chronos-daemon -- -D warnings`
 - [x] **8.7** Manual verification: `cargo run -p chronos-daemon -- --help`
+- [x] **8.8** Safety & Polish: Fix query limits and UTF-8 safe truncation
 
 **Acceptance Criteria:**
 - All CLI subcommands parse correctly

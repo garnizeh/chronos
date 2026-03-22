@@ -32,12 +32,12 @@ pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Commands::Start => handle_start().await?,
         Commands::Query { from, to, limit } => {
-            let url = chronos_daemon::handlers::get_default_db_url();
+            let url = chronos_daemon::handlers::get_default_db_url()?;
             let db = Database::new(&url).await?;
             handle_query(&db, from, to, limit).await?
         }
         Commands::Status => {
-            let url = chronos_daemon::handlers::get_default_db_url();
+            let url = chronos_daemon::handlers::get_default_db_url()?;
             let db = Database::new(&url).await?;
             handle_status(&db, &url).await?
         }
@@ -111,12 +111,7 @@ where
 }
 
 fn get_database_url() -> anyhow::Result<String> {
-    let mut db_path = dirs::data_local_dir()
-        .ok_or_else(|| anyhow::anyhow!("Could not find local data directory"))?;
-    db_path.push("chronos");
-    std::fs::create_dir_all(&db_path)?;
-    db_path.push("chronos.db");
-    Ok(format!("sqlite://{}", db_path.to_string_lossy()))
+    chronos_daemon::handlers::get_default_db_url()
 }
 
 fn handle_pause() {
