@@ -1,6 +1,5 @@
 use chronos_capture::x11::X11Capture;
 use chronos_core::models::{CaptureConfig, VlmConfig};
-use chronos_core::traits::ImageCapture;
 use chronos_daemon::cli::{Cli, Commands};
 use chronos_daemon::database::Database;
 use chronos_daemon::handlers::{handle_query, handle_status};
@@ -51,9 +50,61 @@ pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
 ///
 /// **Go Parallel:** This wires up the "main loop" of your application,
 /// similar to initializing your service dependencies and starting a server.
-// [JUSTIFIED GAP]: This is the top-level orchestrator that wires up real OS drivers (X11),
-// real database files, and external Ollama local instances. Testing this end-to-end
-// in a unit-test environment is not pragmatic. Logic is tested in `chronos-daemon::pipeline`.
+async fn handle_start() -> anyhow::Result<()> {
+    info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
+
+    // 1. Initialize Components
+    let db_url = get_database_url()?;
+    info!("Connecting to database: {}", db_url);
+    let db = Database::new(&db_url).await?;
+
+    let capture = X11Capture::new(CaptureConfig::default());
+    let vision = OllamaVision::new(VlmConfig::default())?;
+
+    // 2. Run Orchestrator
+    info!("Pipeline active. Press Ctrl+C to stop.");
+    run_orchestrator(vision, capture, db).await
+}
+
+/// Decoupled orchestration logic for the capture daemon.
+///
+/// **Go Parallel:** This is the equivalent of a `StartServer(deps)` function
+/// in Go that wires up the dependencies and enters the main loop.
+pub async fn run_orchestrator<V, C>(vision: V, capture: C, db: Database) -> anyhow::Result<()>
+where
+    V: chronos_core::traits::VisionInference + Send + Sync + 'static,
+    C: chronos_core::traits::ImageCapture + Send + Sync + 'static,
+{
+    // Create Orchestrator
+    let engine = CaptureEngine::new(vision, db);
+
+    // Wire the pipeline
+    let (tx, rx) = tokio::sync::mpsc::channel(64);
+
+    // Spawn capture thread
+    let capture_handle = tokio::spawn(async move {
+        // Slow interval for production (30s)
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
+        loop {
+            interval.tick().await;
+            #[allow(clippy::collapsible_if)]
+            if let Ok(frame) = capture.capture_frame().await {
+                if tx.send(frame).await.is_err() {
+                    break;
+                }
+            }
+        }
+    });
+
+    // Run the pipeline (this blocks until RX is closed or Ctrl+C)
+    // In our current architecture, Ctrl+C is handled by the tokio runtime implicitly
+    // for this top-level call.
+    engine.run_pipeline(rx).await?;
+
+    capture_handle.abort();
+    Ok(())
+}
+
 fn get_database_url() -> anyhow::Result<String> {
     let mut db_path = dirs::data_local_dir()
         .ok_or_else(|| anyhow::anyhow!("Could not find local data directory"))?;
@@ -61,51 +112,6 @@ fn get_database_url() -> anyhow::Result<String> {
     std::fs::create_dir_all(&db_path)?;
     db_path.push("chronos.db");
     Ok(format!("sqlite://{}", db_path.to_string_lossy()))
-}
-
-async fn handle_start() -> anyhow::Result<()> {
-    info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
-
-    // 1. Initialize Database
-    let db_url = get_database_url()?;
-
-    info!("Connecting to database: {}", db_url);
-    let db = Database::new(&db_url).await?;
-
-    // 2. Initialize Capture Engine (X11 for v0.1)
-    let capture = X11Capture::new(CaptureConfig::default());
-
-    // 3. Initialize Vision Inference (Ollama)
-    let vision = OllamaVision::new(VlmConfig::default())?;
-
-    // 4. Create Orchestrator
-    let engine = CaptureEngine::new(vision, db);
-
-    // 5. Wire the pipeline
-    let (tx, rx) = tokio::sync::mpsc::channel(64);
-
-    // Spawn capture thread (simulating a blocking producer for now, or just a loop)
-    // In a real scenario, this would be a long-running loop calling `capture.capture_frame()`
-    let capture_handle = tokio::spawn(async move {
-        let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
-        loop {
-            interval.tick().await;
-            if let Ok(frame) = capture.capture_frame().await {
-                let send_res = tx.send(frame).await;
-                if let Err(e) = send_res {
-                    tracing::error!("Failed to send frame to pipeline: {}", e);
-                    break;
-                }
-            }
-        }
-    });
-
-    // 6. Run the pipeline
-    info!("Pipeline active. Press Ctrl+C to stop.");
-    engine.run_pipeline(rx).await?;
-
-    capture_handle.abort();
-    Ok(())
 }
 
 fn handle_pause() -> anyhow::Result<()> {
@@ -163,5 +169,25 @@ mod tests {
         let url = get_database_url().unwrap();
         assert!(url.starts_with("sqlite://"));
         assert!(url.contains("chronos.db"));
+    }
+
+    #[tokio::test]
+    async fn test_run_orchestrator_wiring() {
+        use chronos_core::traits::mocks::{MockCapture, MockVision};
+
+        let db = Database::new_in_memory().await.unwrap();
+        let capture = MockCapture;
+        let vision = MockVision;
+
+        // Run orchestrator with mocks.
+        // We use explicit types to help the compiler infer the Send/Sync requirements.
+        let handle = tokio::spawn(async move {
+            let _ = run_orchestrator::<MockVision, MockCapture>(vision, capture, db).await;
+        });
+
+        // Give it a moment to process the initial mock frame
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+        handle.abort();
     }
 }
