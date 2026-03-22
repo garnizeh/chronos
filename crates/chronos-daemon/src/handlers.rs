@@ -166,4 +166,27 @@ mod tests {
         .await;
         assert!(res.is_ok());
     }
+
+    #[tokio::test]
+    async fn test_handle_query_with_data() {
+        let db = Database::new_in_memory().await.unwrap();
+        // Insert a dummy log
+        db.insert_semantic_log(&chronos_core::models::SemanticLog {
+            id: ulid::Ulid::new(),
+            source_frame_id: ulid::Ulid::new(),
+            timestamp: Utc::now(),
+            description: "Test log".to_string(),
+            active_application: Some("TestApp".to_string()),
+            activity_category: Some("Testing".to_string()),
+            key_entities: vec!["Unit Test".to_string()],
+            confidence_score: 0.95,
+            raw_vlm_response: "{}".to_string(),
+        })
+        .await
+        .unwrap();
+
+        // Testing the successful branch that prints the table
+        let res = handle_query(&db, None, None, 10).await;
+        assert!(res.is_ok());
+    }
 }
