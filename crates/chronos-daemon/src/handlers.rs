@@ -30,11 +30,30 @@ pub async fn handle_query(
             .transpose()?
             .unwrap_or_else(|| Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap());
 
-        let to_dt = to
+        let mut to_dt = to
             .as_deref()
             .map(parse_date)
             .transpose()?
             .unwrap_or_else(Utc::now);
+
+        // If 'to' was date-only (YYYY-MM-DD), normalize to end-of-day
+        if let Some(_to_str) = to.as_deref().filter(|s| {
+            s.len() == 10 && s.chars().all(|c| c.is_numeric() || c == '-')
+        }) {
+            to_dt = to_dt
+                .date_naive()
+                .and_hms_opt(23, 59, 59)
+                .and_then(|hms| Utc.from_local_datetime(&hms).single())
+                .unwrap_or(to_dt);
+        }
+
+        if from_dt > to_dt {
+            anyhow::bail!(
+                "Invalid date range: 'from' ({}) is after 'to' ({})",
+                from_dt,
+                to_dt
+            );
+        }
 
         info!(
             "Querying logs from {} to {} (limit: {})",
@@ -115,7 +134,7 @@ fn truncate(s: &str, max: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::Datelike;
+    use chrono::{Datelike, Timelike};
 
     #[test]
     fn test_parse_date_rfc3339() {
@@ -178,6 +197,34 @@ mod tests {
         )
         .await;
         assert!(res.is_ok());
+
+        // Test invalid range (from > to)
+        let res = handle_query(
+            &db,
+            Some("2023-12-31".to_string()),
+            Some("2023-01-01".to_string()),
+            10,
+        )
+        .await;
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("Invalid date range"));
+    }
+
+    #[test]
+    fn test_date_normalization_logic() {
+        // We test the logic manually since handle_query is async and hits DB
+        let to_str = "2023-10-27";
+        let dt = parse_date(to_str).unwrap();
+        
+        // Manual check of what handle_query would do
+        let normalized = dt.date_naive()
+            .and_hms_opt(23, 59, 59)
+            .and_then(|hms| Utc.from_local_datetime(&hms).single())
+            .unwrap();
+        
+        assert_eq!(normalized.hour(), 23);
+        assert_eq!(normalized.minute(), 59);
+        assert_eq!(normalized.second(), 59);
     }
 
     #[tokio::test]

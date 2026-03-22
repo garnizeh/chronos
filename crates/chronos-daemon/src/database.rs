@@ -91,12 +91,20 @@ impl Database {
         to: DateTime<Utc>,
         limit: u64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
+        let limit_i64 = i64::try_from(limit).map_err(|_| {
+            chronos_core::error::ChronosError::InvalidInput(format!(
+                "Limit {} is too large (max: {})",
+                limit,
+                i64::MAX
+            ))
+        })?;
+
         let rows = sqlx::query_as::<_, SemanticLogRow>(
             "SELECT * FROM semantic_logs WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp ASC LIMIT ?",
         )
         .bind(from.to_rfc3339())
         .bind(to.to_rfc3339())
-        .bind(limit as i64)
+        .bind(limit_i64)
         .fetch_all(&self.pool)
         .await
         .map_err(|e: sqlx::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
@@ -123,10 +131,18 @@ impl Database {
         &self,
         limit: u64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
+        let limit_i64 = i64::try_from(limit).map_err(|_| {
+            chronos_core::error::ChronosError::InvalidInput(format!(
+                "Limit {} is too large (max: {})",
+                limit,
+                i64::MAX
+            ))
+        })?;
+
         let rows = sqlx::query_as::<_, SemanticLogRow>(
             "SELECT * FROM semantic_logs ORDER BY timestamp DESC LIMIT ?",
         )
-        .bind(limit as i64)
+        .bind(limit_i64)
         .fetch_all(&self.pool)
         .await
         .map_err(|e: sqlx::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
@@ -458,5 +474,17 @@ mod tests {
         // Use an invalid sqlite URI to trigger connection error
         let result = Database::new("sqlite://invalid/path/that/cannot/exist/db.sqlite").await;
         assert!(result.is_err());
+    }
+    
+    #[tokio::test]
+    async fn test_limit_overflow_protection() {
+        let db = Database::new_in_memory().await.unwrap();
+        let too_large_limit = i64::MAX as u64 + 1;
+        
+        let res = db.get_recent_logs(too_large_limit).await;
+        assert!(matches!(res, Err(chronos_core::error::ChronosError::InvalidInput(_))));
+
+        let res = db.get_logs_by_date_range(Utc::now(), Utc::now(), too_large_limit).await;
+        assert!(matches!(res, Err(chronos_core::error::ChronosError::InvalidInput(_))));
     }
 }

@@ -7,6 +7,10 @@ use clap::{Parser, Subcommand};
 #[derive(Parser, Debug)]
 #[command(name = "chronos", about = "Your personal context engine", version)]
 pub struct Cli {
+    /// Override the default database URL (e.g., sqlite://:memory:)
+    #[arg(long, global = true)]
+    pub db_url: Option<String>,
+
     #[command(subcommand)]
     pub command: Commands,
 }

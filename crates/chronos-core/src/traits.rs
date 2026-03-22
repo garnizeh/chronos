@@ -21,7 +21,9 @@ pub trait ImageCapture: Send + Sync {
     async fn capture_frame(&self) -> Result<Frame>;
 
     /// Returns the configured capture interval in seconds.
-    fn capture_interval_seconds(&self) -> u64;
+    fn capture_interval_seconds(&self) -> u64 {
+        30
+    }
 }
 
 /// The vision-language model abstraction.
@@ -66,9 +68,7 @@ pub mod mocks {
             })
         }
 
-        fn capture_interval_seconds(&self) -> u64 {
-            30
-        }
+        // [JUSTIFIED GAP]: Default implementation used.
     }
 
     /// A test double that returns a hardcoded semantic log.

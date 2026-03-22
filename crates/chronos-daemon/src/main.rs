@@ -29,14 +29,20 @@ async fn main() -> anyhow::Result<()> {
 /// Separating this from `main()` allows us to unit test the routing logic.
 pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Commands::Start => handle_start().await?,
+        Commands::Start => handle_start(cli.db_url).await?,
         Commands::Query { from, to, limit } => {
-            let url = chronos_daemon::handlers::get_default_db_url()?;
+            let url = match cli.db_url {
+                Some(url) => url,
+                None => chronos_daemon::handlers::get_default_db_url()?,
+            };
             let db = Database::new(&url).await?;
             handle_query(&db, from, to, limit).await?
         }
         Commands::Status => {
-            let url = chronos_daemon::handlers::get_default_db_url()?;
+            let url = match cli.db_url {
+                Some(url) => url,
+                None => chronos_daemon::handlers::get_default_db_url()?,
+            };
             let db = Database::new(&url).await?;
             handle_status(&db, &url).await?
         }
@@ -51,11 +57,14 @@ pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
 ///
 /// **Go Parallel:** This wires up the "main loop" of your application,
 /// similar to initializing your service dependencies and starting a server.
-async fn handle_start() -> anyhow::Result<()> {
+async fn handle_start(db_url_override: Option<String>) -> anyhow::Result<()> {
     info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
 
     // 1. Initialize Components
-    let db_url = get_database_url()?;
+    let db_url = match db_url_override {
+        Some(url) => url,
+        None => get_database_url()?,
+    };
     info!("Connecting to database: {db_url}");
     let db = Database::new(&db_url).await?;
 
@@ -91,9 +100,9 @@ where
         // Note: We call capture.capture_frame() manually here instead of start_capture_loop()
         // because we are already inside a managed async orchestrator and want to
         // maintain direct control over the pipeline wiring.
-        let mut interval = tokio::time::interval(std::time::Duration::from_secs(
-            capture.capture_interval_seconds(),
-        ));
+        // Guard against zero duration to prevent busy-looping if configured incorrectly.
+        let interval_secs = std::cmp::max(capture.capture_interval_seconds(), 1);
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(interval_secs));
         loop {
             interval.tick().await;
             match capture.capture_frame().await {
@@ -152,6 +161,7 @@ mod tests {
         // Test Pause/Resume routing
         assert!(
             run_app(Cli {
+                db_url: None,
                 command: Commands::Pause
             })
             .await
@@ -159,6 +169,7 @@ mod tests {
         );
         assert!(
             run_app(Cli {
+                db_url: None,
                 command: Commands::Resume
             })
             .await
@@ -168,19 +179,23 @@ mod tests {
         // Test Status routing (uses a dummy DB URL that might fail if data dir isn't writable,
         // but we can at least verify it reaches the DB init logic).
         // For a more robust test, we could further decouple the DB creation.
+        // Test Status routing with hermetic DB
         let cli = Cli {
+            db_url: Some("sqlite::memory:".to_string()),
             command: Commands::Status,
         };
-        let _ = run_app(cli).await;
+        assert!(run_app(cli).await.is_ok());
 
+        // Test Query routing with hermetic DB
         let cli = Cli {
+            db_url: Some("sqlite::memory:".to_string()),
             command: Commands::Query {
                 from: None,
                 to: None,
                 limit: 10,
             },
         };
-        let _ = run_app(cli).await;
+        assert!(run_app(cli).await.is_ok());
     }
 
     #[test]
@@ -230,9 +245,7 @@ mod tests {
                 ))
             }
 
-            fn capture_interval_seconds(&self) -> u64 {
-                30
-            }
+            // [JUSTIFIED GAP]: Default implementation used.
         }
 
         let db = Database::new_in_memory().await.unwrap();
