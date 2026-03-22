@@ -7,10 +7,12 @@ use clap::{Parser, Subcommand};
 #[derive(Parser, Debug)]
 #[command(name = "chronos", about = "Your personal context engine", version)]
 pub struct Cli {
-    /// Override the default database URL (e.g., sqlite://:memory:)
+    /// Override the default database URL (e.g., sqlite://:memory:).
+    /// If not provided, Chronos uses a platform-specific local data directory.
     #[arg(long, global = true)]
     pub db_url: Option<String>,
 
+    /// The command to execute.
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -20,31 +22,32 @@ pub struct Cli {
 /// **Go Parallel:** These are like your subcommands in `cobra`.
 #[derive(Subcommand, Debug, PartialEq)]
 pub enum Commands {
-    /// Start the capture daemon
+    /// Start the background capture daemon.
+    /// This initiates the continuous screen capture and VLM analysis loop.
     Start,
 
-    /// Query semantic logs
+    /// Query the semantic logs stored in the database.
     Query {
-        /// Filter logs from this date (e.g., YYYY-MM-DD or relative like 'yesterday')
+        /// Filter logs from this date/time (YYYY-MM-DD or RFC3339).
         #[arg(long)]
         from: Option<String>,
 
-        /// Filter logs up to this date
+        /// Filter logs up to this date/time (YYYY-MM-DD or RFC3339).
         #[arg(long)]
         to: Option<String>,
 
-        /// Maximum number of results to return
+        /// Maximum number of results to return (default: 10).
         #[arg(long, default_value = "10")]
         limit: u64,
     },
 
-    /// Show system status and log statistics
+    /// Show current system status, database location, and log statistics.
     Status,
 
-    /// Pause screen capture (v0.1: stub)
+    /// Pause the screen capture loop (v0.1: stub).
     Pause,
 
-    /// Resume screen capture (v0.1: stub)
+    /// Resume the screen capture loop (v0.1: stub).
     Resume,
 }
 

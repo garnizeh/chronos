@@ -9,7 +9,9 @@ use tracing::{error, info, warn};
 /// The core orchestrator. Receives frames, analyzes them, stores results.
 /// Generic over its dependencies — accepts any VisionInference implementation.
 pub struct CaptureEngine<V: VisionInference> {
+    /// The VLM client used for frame analysis.
     vision: V,
+    /// The database handle for storing results.
     database: Database,
 }
 

@@ -1,3 +1,8 @@
+//! Behavioral contracts for the Chronos pipeline.
+//!
+//! This module defines the traits that decouple our core orchestration logic
+//! from specific implementations of hardware capture and AI inference.
+
 use crate::error::Result;
 use crate::models::{Frame, SemanticLog};
 use async_trait::async_trait;

@@ -7,6 +7,7 @@ use std::str::FromStr;
 /// The Database struct encapsulates the SQLite connection pool.
 /// In Go, this would be equivalent to a struct holding a `*sql.DB`.
 pub struct Database {
+    /// The underlying sqlx connection pool for SQLite.
     pool: SqlitePool,
 }
 
@@ -154,17 +155,30 @@ fn try_limit_i64(limit: u64) -> Result<i64, chronos_core::error::ChronosError> {
 }
 
 /// Internal helper struct to map SQL rows to domain models.
-/// sqlx's `FromRow` needs specific types that match the DB schema.
+///
+/// **Didactic:** sqlx's `FromRow` requires a struct that exactly matches the
+/// database schema. We decouple this from our core `SemanticLog` model to
+/// allow for data transformations (like parsing JSON strings or RFC3339 dates)
+/// at the boundary.
 #[derive(sqlx::FromRow)]
 struct SemanticLogRow {
+    /// Primary key (ULID string).
     id: String,
+    /// RFC3339 timestamp string.
     timestamp: String,
+    /// Reference to the source frame (ULID string).
     source_frame_id: String,
+    /// Model's analysis description.
     description: String,
+    /// Optional application name.
     active_application: Option<String>,
+    /// Optional category.
     activity_category: Option<String>,
+    /// JSON string of key entities.
     key_entities: String,
+    /// Model confidence score.
     confidence_score: f64,
+    /// Full raw response from the VLM.
     raw_vlm_response: String,
 }
 

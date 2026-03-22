@@ -1,3 +1,8 @@
+//! chronos-daemon: The main entry point and orchestrator for the Chronos system.
+//!
+//! This module wires together the CLI, the database, and the async capture pipeline.
+//! It manages the lifecycle of the background daemon, including graceful shutdown
+//! and component initialization.
 use chronos_capture::x11::X11Capture;
 use chronos_core::models::{CaptureConfig, VlmConfig};
 use chronos_daemon::{
@@ -111,7 +116,13 @@ where
     });
 
     // Run the pipeline (this blocks until RX is closed or Ctrl+C)
-    // We use a select! to handle graceful shutdown signals.
+    //
+    // **Why use tokio::select!?**
+    // In Go, you'd use a `select` statement inside a `for` loop to wait on
+    // multiple channels (e.g., `case <-ctx.Done(): return`).
+    // Rust's `tokio::select!` is a top-level macro that waits for the first
+    // future to complete, cancelling the others. This allows it to wait for
+    // the pipeline to finish *or* a Ctrl+C signal simultaneously.
     let mut pipeline_handle = tokio::spawn(async move { engine.run_pipeline(rx).await });
 
     tokio::select! {

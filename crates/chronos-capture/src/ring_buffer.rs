@@ -23,7 +23,11 @@ use std::sync::{Arc, Mutex};
 /// Chronos, we treat this as a fatal system failure.
 #[derive(Clone)]
 pub struct FrameRingBuffer {
+    /// The underlying synchronized storage. We use `Arc` to allow cloning the
+    /// buffer handle across threads, and `Mutex` to guard the `VecDeque`.
+    /// Each frame inside is also wrapped in an `Arc` to avoid copying image data.
     buffer: Arc<Mutex<VecDeque<Arc<Frame>>>>,
+    /// Maximum number of frames the buffer is allowed to hold before evicting the oldest.
     capacity: usize,
 }
 

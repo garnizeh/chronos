@@ -10,13 +10,20 @@ use ulid::Ulid;
 use xcap::Monitor;
 
 /// Trait to abstract the underlying platform-specific screen capture.
-/// This allows mocking the OS interaction for 100% test coverage.
+///
+/// By decoupling the OS-level capture logic from the `X11Capture` orchestrator,
+/// we can easily unit test the pipeline using mocks without requiring a live
+/// X11 connection or a physical monitor.
 pub trait CaptureSource: Send + Sync + 'static {
     /// Captures the primary monitor's current state as an RGBA image.
+    ///
+    /// Implementations should handle monitor discovery and image extraction.
     fn capture_primary(&self) -> Result<image::RgbaImage>;
 }
 
-/// The production implementation using the `xcap` crate.
+/// The production implementation of `CaptureSource` using the `xcap` crate.
+///
+/// This struct communicates directly with the X11 server to fetch raw pixels.
 pub struct XcapSource;
 
 impl CaptureSource for XcapSource {
@@ -55,7 +62,9 @@ impl CaptureSource for XcapSource {
 /// `tokio::task::spawn_blocking` (for one-offs) or `std::thread::spawn`
 /// (for an infinite loop).
 pub struct X11Capture {
+    /// User-defined configuration for capture frequency and buffers.
     config: CaptureConfig,
+    /// The engine used to actually pull pixels from the screen (Production or Mock).
     source: std::sync::Arc<dyn CaptureSource>,
 }
 

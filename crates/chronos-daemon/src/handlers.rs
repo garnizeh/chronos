@@ -116,6 +116,10 @@ fn parse_date(s: &str) -> anyhow::Result<DateTime<Utc>> {
     anyhow::bail!("Invalid date format: {}. Use YYYY-MM-DD or RFC3339.", s)
 }
 
+/// Truncates a string to the given maximum length, adding ellipsis if truncated.
+///
+/// Handles multi-byte UTF-8 characters safely by ensuring truncation only
+/// happens on valid character boundaries.
 fn truncate(s: &str, max: usize) -> String {
     if s.len() <= max {
         return s.to_string();
