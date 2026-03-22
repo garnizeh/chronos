@@ -731,7 +731,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ---
 
-### Step 9: Integration & Smoke Test
+### Step 9: Integration & Smoke Test ✅
 
 > 📋 **Detailed tasks:** [`tasks-step-9-integration-smoke-test/`](tasks-step-9-integration-smoke-test/)
 

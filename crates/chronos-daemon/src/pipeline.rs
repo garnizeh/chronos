@@ -293,8 +293,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_full_pipeline_mock_end_to_end() {
-        use chronos_core::traits::mocks::MockCapture;
         use chronos_core::traits::ImageCapture;
+        use chronos_core::traits::mocks::MockCapture;
 
         let db = Database::new_in_memory().await.unwrap();
         let vision = MockVision;
