@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use base64::{Engine as _, engine::general_purpose};
 use chronos_core::error::Result;
-use chronos_core::models::{Frame, SemanticLog, VlmConfig};
+use chronos_core::models::{Frame, PromptStrategy, SemanticLog, VlmConfig};
 use chronos_core::traits::VisionInference;
 use serde::Deserialize;
 use serde_json::json;
@@ -35,13 +35,38 @@ struct VlmJsonResponse {
     confidence_score: f64,
 }
 
-const SCREENSHOT_PROMPT: &str = "Analyze this screenshot. Provide a structured JSON response with the following fields: \
-                  description (brief summary), active_application (name of the window in focus), \
-                  activity_category (e.g., Development, Communication, Browsing), \
-                  key_entities (list of relevant technologies, names, or topics), \
-                  confidence_score (0.0 to 1.0).";
-
 impl OllamaVision {
+    /// Returns the prompt string associated with the configured strategy.
+    fn get_prompt(strategy: PromptStrategy) -> &'static str {
+        match strategy {
+            PromptStrategy::Simple => {
+                "Analyze this screenshot. Provide a structured JSON response with the following fields: \
+                 description (brief summary), active_application (name of the window in focus), \
+                 activity_category (e.g., Development, Communication, Browsing), \
+                 key_entities (list of relevant technologies, names, or topics), \
+                 confidence_score (0.0 to 1.0)."
+            }
+            PromptStrategy::Standard => {
+                "You are a personal context assistant. Analyze this screenshot of a computer desktop. \
+                 Provide a structured JSON response including: \
+                 1. 'description': A detailed but concise summary of the user's current activity (e.g., 'Debugging a Rust lifetime error in VS Code'). \
+                 2. 'active_application': The name of the window or application in focus. \
+                 3. 'activity_category': Classify the work (Development, Research, Communication, Entertainment, Utility). \
+                 4. 'key_entities': Specific tools, libraries, or topics visible. \
+                 5. 'confidence_score': Your score (0.0 to 1.0) on accuracy."
+            }
+            PromptStrategy::Detailed => {
+                "You are a high-precision context engine. Analyze this screenshot deeply. \
+                 Provide a structured JSON response including: \
+                 1. 'description': A highly detailed summary of exactly what the user is doing. Identify filenames, window titles, and specific UI states. \
+                 2. 'active_application': The name of the focused app. \
+                 3. 'activity_category': High-level work classification. \
+                 4. 'key_entities': Extract visible text, URLs, project names, or specific technical terms found in the image. \
+                 5. 'confidence_score': 0.0 to 1.0."
+            }
+        }
+    }
+
     /// Create a new OllamaVision client from configuration.
     /// Sets the HTTP timeout based on VLM configuration.
     pub fn new(config: VlmConfig) -> Result<Self> {
@@ -102,7 +127,7 @@ impl VisionInference for OllamaVision {
         // 2. Build the request body for Ollama
         let body = json!({
             "model": self.config.model_name,
-            "prompt": SCREENSHOT_PROMPT,
+            "prompt": Self::get_prompt(self.config.prompt_strategy),
             "images": [base64_image],
             "stream": false,
             "format": "json"
@@ -175,7 +200,7 @@ impl VisionInference for OllamaVision {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chronos_core::models::VlmConfig;
+    use chronos_core::models::{PromptStrategy, VlmConfig};
     use wiremock::matchers::{body_json, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -297,7 +322,7 @@ mod tests {
 
         let expected_body = json!({
             "model": "test-model",
-            "prompt": SCREENSHOT_PROMPT,
+            "prompt": OllamaVision::get_prompt(PromptStrategy::Simple),
             "images": [general_purpose::STANDARD.encode(vec![0, 1, 2, 3])],
             "stream": false,
             "format": "json"
@@ -314,6 +339,7 @@ mod tests {
             ollama_host: mock_server.uri(),
             model_name: "test-model".to_string(),
             timeout_seconds: 5,
+            prompt_strategy: PromptStrategy::Simple,
         };
         let vision = OllamaVision::new(config).unwrap();
         let frame = make_test_frame();
@@ -337,6 +363,7 @@ mod tests {
 
         let config = VlmConfig {
             ollama_host: mock_server.uri(),
+            prompt_strategy: PromptStrategy::Simple,
             ..VlmConfig::default()
         };
         let vision = OllamaVision::new(config).unwrap();
@@ -387,6 +414,7 @@ mod tests {
 
         let config = VlmConfig {
             ollama_host: mock_server.uri(),
+            prompt_strategy: PromptStrategy::Simple,
             ..VlmConfig::default()
         };
         let vision = OllamaVision::new(config).unwrap();
