@@ -733,6 +733,8 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ### Step 9: Integration & Smoke Test
 
+> 📋 **Detailed tasks:** [`tasks-step-9-integration-smoke-test/`](tasks-step-9-integration-smoke-test/)
+
 **Goal:** Full workspace verification. All tests green, all lints clean, all formatting correct. Run the `/Verify Cargo Workspace` workflow. Write a basic README.
 
 **Depends on:** All prior phases complete
