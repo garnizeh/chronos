@@ -1,15 +1,14 @@
-use chronos_daemon::cli::{Cli, Commands};
-use chronos_daemon::handlers::{handle_query, handle_status};
-use chronos_daemon::database::Database;
-use chronos_daemon::pipeline::CaptureEngine;
 use chronos_capture::x11::X11Capture;
-use chronos_inference::ollama::OllamaVision;
-use chronos_core::models::{VlmConfig, CaptureConfig};
+use chronos_core::models::{CaptureConfig, VlmConfig};
 use chronos_core::traits::ImageCapture;
+use chronos_daemon::cli::{Cli, Commands};
+use chronos_daemon::database::Database;
+use chronos_daemon::handlers::{handle_query, handle_status};
+use chronos_daemon::pipeline::CaptureEngine;
+use chronos_inference::ollama::OllamaVision;
 use clap::Parser;
-use tracing::{info, Level};
+use tracing::{Level, info};
 use tracing_subscriber::FmtSubscriber;
-use dirs;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -17,8 +16,7 @@ async fn main() -> anyhow::Result<()> {
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
         .finish();
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("Setting default subscriber failed");
+    tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
     let cli = Cli::parse();
 
@@ -41,18 +39,19 @@ async fn handle_start() -> anyhow::Result<()> {
     info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
 
     // 1. Initialize Database
-    let mut db_path = dirs::data_local_dir().ok_or_else(|| anyhow::anyhow!("Could not find local data directory"))?;
+    let mut db_path = dirs::data_local_dir()
+        .ok_or_else(|| anyhow::anyhow!("Could not find local data directory"))?;
     db_path.push("chronos");
     std::fs::create_dir_all(&db_path)?;
     db_path.push("chronos.db");
     let db_url = format!("sqlite://{}", db_path.to_string_lossy());
-    
+
     info!("Connecting to database: {}", db_url);
     let db = Database::new(&db_url).await?;
 
     // 2. Initialize Capture Engine (X11 for v0.1)
     let capture = X11Capture::new(CaptureConfig::default());
-    
+
     // 3. Initialize Vision Inference (Ollama)
     let vision = OllamaVision::new(VlmConfig::default())?;
 
@@ -69,7 +68,8 @@ async fn handle_start() -> anyhow::Result<()> {
         loop {
             interval.tick().await;
             if let Ok(frame) = capture.capture_frame().await {
-                if let Err(e) = tx.send(frame).await {
+                let send_res = tx.send(frame).await;
+                if let Err(e) = send_res {
                     tracing::error!("Failed to send frame to pipeline: {}", e);
                     break;
                 }
