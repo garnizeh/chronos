@@ -45,8 +45,8 @@ pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
             let db = Database::new(&url).await?;
             handle_status(&db, &url).await?
         }
-        Commands::Pause => handle_pause(),
-        Commands::Resume => handle_resume(),
+        Commands::Pause => handle_pause()?,
+        Commands::Resume => handle_resume()?,
     }
 
     Ok(())
@@ -91,7 +91,7 @@ where
     let (tx, rx) = tokio::sync::mpsc::channel(64);
 
     // Spawn capture thread
-    let capture_handle = tokio::spawn(async move {
+    let mut capture_handle = tokio::spawn(async move {
         // We use the configured interval from the capture implementation.
         // Note: We call capture.capture_frame() manually here instead of start_capture_loop()
         // because we are already inside a managed async orchestrator and want to
@@ -122,24 +122,39 @@ where
     // multiple channels (e.g., `case <-ctx.Done(): return`).
     // Rust's `tokio::select!` is a top-level macro that waits for the first
     // future to complete, cancelling the others. This allows it to wait for
-    // the pipeline to finish *or* a Ctrl+C signal simultaneously.
+    // the pipeline to finish, the capture loop to fail, OR a Ctrl+C signal simultaneously.
     let mut pipeline_handle = tokio::spawn(async move { engine.run_pipeline(rx).await });
 
-    tokio::select! {
+    let result = tokio::select! {
         res = &mut pipeline_handle => {
             // Pipeline finished on its own (rx closed)
-            res??;
+            res.map_err(|e| anyhow::anyhow!("Pipeline task panicked: {e}"))
+               .and_then(|inner| inner.map_err(|e| anyhow::anyhow!("Pipeline execution failed: {e}")))
         }
-        _ = tokio::signal::ctrl_c() => {
-            info!("Shutdown signal received, closing capture loop...");
-            capture_handle.abort();
-            // Await the pipeline to finish processing remaining frames in the queue
-            pipeline_handle.await??;
-            info!("Pipeline drained. Shutdown complete.");
+        res = &mut capture_handle => {
+            // Capture loop finished on its own (shouldn't happen unless error)
+            res.map_err(|e| anyhow::anyhow!("Capture task panicked: {e}"))
+               .and_then(|_| Err(anyhow::anyhow!("Capture task exited unexpectedly")))
         }
-    }
+        ctrl_c_res = tokio::signal::ctrl_c() => {
+            ctrl_c_res.map_err(|e| anyhow::anyhow!("Failed to listen for Ctrl+C: {e}"))
+               .map(|_| {
+                   info!("Shutdown signal received, closing capture loop...");
+               })
+        }
+    };
 
-    Ok(())
+    // Symmetric cleanup: ensure all tasks are stopped and drained
+    // This avoids detached "zombie" tasks if the orchestrator returns.
+    capture_handle.abort();
+    pipeline_handle.abort();
+
+    // Await both to ensure they've actually stopped (draining the pipeline)
+    let _ = capture_handle.await;
+    let _ = pipeline_handle.await;
+
+    info!("Orchestrator shutdown complete.");
+    result
 }
 
 /// Resolve the database URL from an optional override or the default system path.
@@ -150,12 +165,16 @@ fn resolve_db_url(url_override: Option<String>) -> anyhow::Result<String> {
     }
 }
 
-fn handle_pause() {
-    println!("Pause command not yet implemented in v0.1. Full IPC coming in v0.2.");
+fn handle_pause() -> anyhow::Result<()> {
+    Err(anyhow::anyhow!(
+        "Pause command not yet implemented in v0.1. Full IPC coming in v0.2."
+    ))
 }
 
-fn handle_resume() {
-    println!("Resume command not yet implemented in v0.1. Full IPC coming in v0.2.");
+fn handle_resume() -> anyhow::Result<()> {
+    Err(anyhow::anyhow!(
+        "Resume command not yet implemented in v0.1. Full IPC coming in v0.2."
+    ))
 }
 
 #[cfg(test)]
@@ -171,7 +190,7 @@ mod tests {
                 command: Commands::Pause
             })
             .await
-            .is_ok()
+            .is_err()
         );
         assert!(
             run_app(Cli {
@@ -179,7 +198,7 @@ mod tests {
                 command: Commands::Resume
             })
             .await
-            .is_ok()
+            .is_err()
         );
 
         // Test Status routing (uses a dummy DB URL that might fail if data dir isn't writable,
