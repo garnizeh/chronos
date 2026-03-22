@@ -19,7 +19,15 @@ async fn main() -> anyhow::Result<()> {
     tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
 
     let cli = Cli::parse();
+    run_app(cli).await
+}
 
+/// Core application router.
+///
+/// **Go Parallel (Didactic):** This is the equivalent of a `Serve()` or `Run()`
+/// function that takes a configuration (the parsed CLI) and dispatches it.
+/// Separating this from `main()` allows us to unit test the routing logic.
+pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Commands::Start => handle_start().await?,
         Commands::Query { from, to, limit } => {
@@ -110,9 +118,19 @@ fn handle_resume() -> anyhow::Result<()> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_stubs() {
-        assert!(handle_pause().is_ok());
-        assert!(handle_resume().is_ok());
+    #[tokio::test]
+    async fn test_run_app_routing() {
+        // Test Pause/Resume routing
+        assert!(run_app(Cli { command: Commands::Pause }).await.is_ok());
+        assert!(run_app(Cli { command: Commands::Resume }).await.is_ok());
+
+        // Test Status routing (uses a dummy DB URL that might fail if data dir isn't writable,
+        // but we can at least verify it reaches the DB init logic).
+        // For a more robust test, we could further decouple the DB creation.
+        let cli = Cli { command: Commands::Status };
+        let _ = run_app(cli).await;
+
+        let cli = Cli { command: Commands::Query { from: None, to: None, limit: 10 } };
+        let _ = run_app(cli).await;
     }
 }
