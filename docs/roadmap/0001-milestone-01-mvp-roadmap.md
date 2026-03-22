@@ -630,7 +630,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ---
 
-### Step 8: CLI
+### [x] Step 8: CLI
 
 **Goal:** Implement the CLI interface using `clap`: `chronos query`, `chronos status`, `chronos pause`, `chronos resume`. The CLI reads from SQLite and reports system state. (See Design §3.F — "chronos-daemon" crate responsibilities)
 
@@ -643,7 +643,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 
 
-- [ ] **8.1** Create `crates/chronos-daemon/src/cli.rs`:
+- [x] **8.1** Create `crates/chronos-daemon/src/cli.rs`:
   - Define `Cli` struct with `#[derive(Parser)]`:
     ```rust
     #[derive(Parser)]
@@ -686,13 +686,13 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
   > **Go parallel:** In Go you'd use `cobra` or `flag`. Rust's `clap` with `derive` is the equivalent — but it generates help text and validates arguments at compile time.
 
-- [ ] **8.2** Implement command handlers in `main.rs`:
+- [x] **8.2** Implement command handlers in `main.rs`:
   - `handle_start()` — initialize Database, X11Capture, OllamaVision, wire the pipeline (from Step 7), run the async loop
   - `handle_query(from, to, limit)` — connect to SQLite, query logs by date range, print results formatted to stdout
   - `handle_status()` — connect to SQLite, print log count + capture state (for v0.1: basic stats from DB)
   - `handle_pause()` / `handle_resume()` — for v0.1, these can write/delete a sentinel file or print a "not yet implemented" message. Full IPC comes in v0.2.
 
-- [ ] **8.3** Update `crates/chronos-daemon/src/main.rs`:
+- [x] **8.3** Update `crates/chronos-daemon/src/main.rs`:
   ```rust
   #[tokio::main]
   async fn main() -> anyhow::Result<()> {
@@ -709,15 +709,15 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   ```
   - Add `anyhow = "1"` to `chronos-daemon/Cargo.toml` for top-level error handling
 
-- [ ] **8.4** Write tests (`#[cfg(test)]` in `cli.rs`):
+- [x] **8.4** Write tests (`#[cfg(test)]` in `cli.rs`):
   - `test_cli_parse_start` — verify `chronos start` parses to `Commands::Start`
   - `test_cli_parse_query_with_dates` — verify `chronos query --from 2025-01-01 --to 2025-01-31` parses correctly
   - `test_cli_parse_query_defaults` — verify `chronos query` with no args uses default limit
   - `test_cli_parse_status` — verify `chronos status` parses correctly
 
-- [ ] **8.5** Run: `cargo test -p chronos-daemon`
-- [ ] **8.6** Run: `cargo clippy -p chronos-daemon -- -D warnings`
-- [ ] **8.7** Manual verification: `cargo run -p chronos-daemon -- --help`
+- [x] **8.5** Run: `cargo test -p chronos-daemon`
+- [x] **8.6** Run: `cargo clippy -p chronos-daemon -- -D warnings`
+- [x] **8.7** Manual verification: `cargo run -p chronos-daemon -- --help`
 
 **Acceptance Criteria:**
 - All CLI subcommands parse correctly
