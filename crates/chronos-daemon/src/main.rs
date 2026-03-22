@@ -91,10 +91,15 @@ where
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
         loop {
             interval.tick().await;
-            #[allow(clippy::collapsible_if)]
-            if let Ok(frame) = capture.capture_frame().await {
-                if tx.send(frame).await.is_err() {
-                    break;
+            match capture.capture_frame().await {
+                Ok(frame) => {
+                    if tx.send(frame).await.is_err() {
+                        break;
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("failed to capture frame: {e}");
+                    // Transient error or display temporarily locked; continue searching for frames
                 }
             }
         }
@@ -184,6 +189,37 @@ mod tests {
 
         // Give it a moment to process the initial mock frame
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+        handle.abort();
+    }
+
+    #[tokio::test]
+    async fn test_run_orchestrator_capture_error() {
+        use chronos_core::traits::ImageCapture;
+        use chronos_core::traits::mocks::MockVision;
+
+        struct MockCaptureError;
+        #[async_trait::async_trait]
+        impl ImageCapture for MockCaptureError {
+            async fn capture_frame(
+                &self,
+            ) -> chronos_core::error::Result<chronos_core::models::Frame> {
+                Err(chronos_core::error::ChronosError::Capture(
+                    "Mock failure".to_string(),
+                ))
+            }
+        }
+
+        let db = Database::new_in_memory().await.unwrap();
+        let capture = MockCaptureError;
+        let vision = MockVision;
+
+        let handle = tokio::spawn(async move {
+            let _ = run_orchestrator::<MockVision, MockCaptureError>(vision, capture, db).await;
+        });
+
+        // Give it a moment to run and hit the error log
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
         handle.abort();
     }
