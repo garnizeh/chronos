@@ -22,8 +22,16 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Commands::Start => handle_start().await?,
-        Commands::Query { from, to, limit } => handle_query(from, to, limit).await?,
-        Commands::Status => handle_status().await?,
+        Commands::Query { from, to, limit } => {
+            let url = chronos_daemon::handlers::get_default_db_url();
+            let db = Database::new(&url).await?;
+            handle_query(&db, from, to, limit).await?
+        }
+        Commands::Status => {
+            let url = chronos_daemon::handlers::get_default_db_url();
+            let db = Database::new(&url).await?;
+            handle_status(&db, &url).await?
+        }
         Commands::Pause => handle_pause()?,
         Commands::Resume => handle_resume()?,
     }
@@ -35,6 +43,9 @@ async fn main() -> anyhow::Result<()> {
 ///
 /// **Go Parallel:** This wires up the "main loop" of your application,
 /// similar to initializing your service dependencies and starting a server.
+// [JUSTIFIED GAP]: This is the top-level orchestrator that wires up real OS drivers (X11),
+// real database files, and external Ollama local instances. Testing this end-to-end
+// in a unit-test environment is not pragmatic. Logic is tested in `chronos-daemon::pipeline`.
 async fn handle_start() -> anyhow::Result<()> {
     info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
 
