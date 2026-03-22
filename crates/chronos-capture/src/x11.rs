@@ -33,20 +33,38 @@ impl CaptureSource for XcapSource {
         let monitors = Monitor::all()
             .map_err(|e| ChronosError::Capture(format!("Failed to enumerate monitors: {}", e)))?;
 
+        if monitors.is_empty() {
+            return Err(ChronosError::Capture(
+                "No monitors detected — cannot capture screen".to_string(),
+            ));
+        }
+
         let mut primary = None;
-        for m in monitors {
-            if m.is_primary().map_err(|e| {
-                ChronosError::Capture(format!("Failed to check if monitor is primary: {}", e))
-            })? {
+        let mut first = None;
+
+        for (i, m) in monitors.into_iter().enumerate() {
+            if i == 0 {
+                first = Some(m.clone());
+            }
+
+            // [JUSTIFIED GAP]: is_primary() can fail in specialized environments (e.g. nested X servers),
+            // but for v0.1 we proceed with fallback rather than failing the entire daemon.
+            if m.is_primary().unwrap_or(false) {
                 primary = Some(m);
                 break;
             }
         }
 
-        let primary = primary
-            .ok_or_else(|| ChronosError::Capture("No primary monitor detected".to_string()))?;
+        let target = if let Some(p) = primary {
+            p
+        } else {
+            tracing::warn!(
+                "No primary monitor detected; falling back to the first available monitor."
+            );
+            first.expect("Monitors list is not empty, so first monitor must exist")
+        };
 
-        primary
+        target
             .capture_image()
             .map_err(|e| ChronosError::Capture(format!("Failed to capture image: {}", e)))
     }
@@ -113,36 +131,43 @@ impl X11Capture {
                 }
 
                 match source.capture_primary() {
-                    Ok(image) => match Self::encode_image_to_frame(image) {
-                        Ok(mut frame) => {
-                            // Send the frame with interruptible retry
-                            loop {
-                                if *shutdown_rx.borrow() {
-                                    // [JUSTIFIED GAP]: Shutdown mid-send is infrequent and occasionally
-                                    // under-reported by llvm-cov due to thread termination timing.
-                                    return;
-                                }
-
-                                match tx.try_send(frame) {
-                                    Ok(_) => break,
-                                    Err(mpsc::error::TrySendError::Full(returned_frame)) => {
-                                        frame = returned_frame;
-                                        // [JUSTIFIED GAP]: Backpressure retry logic is verified in
-                                        // test_start_capture_loop_backpressure but often missed by timing.
-                                        // Back-pressure: wait a bit and check shutdown again
-                                        std::thread::sleep(std::time::Duration::from_millis(50));
-                                    }
-                                    Err(mpsc::error::TrySendError::Closed(_)) => {
-                                        tracing::error!("Failed to send frame (receiver closed)");
+                    Ok(image) => {
+                        match Self::encode_image_to_frame(image, config.debug_save_path.as_deref())
+                        {
+                            Ok(mut frame) => {
+                                // Send the frame with interruptible retry
+                                loop {
+                                    if *shutdown_rx.borrow() {
+                                        // [JUSTIFIED GAP]: Shutdown mid-send is infrequent and occasionally
+                                        // under-reported by llvm-cov due to thread termination timing.
                                         return;
+                                    }
+
+                                    match tx.try_send(frame) {
+                                        Ok(_) => break,
+                                        Err(mpsc::error::TrySendError::Full(returned_frame)) => {
+                                            frame = returned_frame;
+                                            // [JUSTIFIED GAP]: Backpressure retry logic is verified in
+                                            // test_start_capture_loop_backpressure but often missed by timing.
+                                            // Back-pressure: wait a bit and check shutdown again
+                                            std::thread::sleep(std::time::Duration::from_millis(
+                                                50,
+                                            ));
+                                        }
+                                        Err(mpsc::error::TrySendError::Closed(_)) => {
+                                            tracing::error!(
+                                                "Failed to send frame (receiver closed)"
+                                            );
+                                            return;
+                                        }
                                     }
                                 }
                             }
+                            Err(e) => {
+                                tracing::error!("Failed to encode captured image: {}", e);
+                            }
                         }
-                        Err(e) => {
-                            tracing::error!("Failed to encode captured image: {}", e);
-                        }
-                    },
+                    }
                     Err(e) => {
                         tracing::error!("Screen capture loop error: {}", e);
                     }
@@ -166,16 +191,38 @@ impl X11Capture {
     }
 
     /// Encodes a raw image buffer into a structured PNG `Frame`.
-    /// This is an internal helper to centralize the encoding logic and
-    /// allow unit testing without a live screen capture environment.
-    fn encode_image_to_frame(image: image::RgbaImage) -> Result<Frame> {
+    ///
+    /// If `debug_save_path` is provided, the raw image is also saved to disk.
+    fn encode_image_to_frame(
+        image: image::RgbaImage,
+        debug_save_path: Option<&str>,
+    ) -> Result<Frame> {
         let width = image.width();
         let height = image.height();
+        let id = Ulid::new();
+        let timestamp = Utc::now();
 
         if width == 0 || height == 0 {
             return Err(ChronosError::Capture(
                 "Cannot encode empty image".to_string(),
             ));
+        }
+
+        // (Debug Only) Save to disk if requested
+        if let Some(path_str) = debug_save_path {
+            let path = std::path::Path::new(path_str);
+            if !path.exists() {
+                std::fs::create_dir_all(path).map_err(|e| {
+                    ChronosError::Capture(format!("Failed to create debug save dir: {}", e))
+                })?;
+            }
+
+            let filename = format!("capture_{}_{}.png", timestamp.format("%Y%m%d_%H%M%S"), id);
+            let file_path = path.join(filename);
+            image.save(&file_path).map_err(|e| {
+                ChronosError::Capture(format!("Failed to save debug image to disk: {}", e))
+            })?;
+            tracing::debug!("Debug capture saved to: {:?}", file_path);
         }
 
         // Encode to PNG purely in RAM (no SSD wear/tear - Architecture Rule)
@@ -185,8 +232,8 @@ impl X11Capture {
             .map_err(|e| ChronosError::Capture(format!("Failed to encode PNG: {}", e)))?;
 
         Ok(Frame {
-            id: Ulid::new(),
-            timestamp: Utc::now(),
+            id,
+            timestamp,
             image_data: buffer,
             width,
             height,
@@ -200,9 +247,11 @@ impl ImageCapture for X11Capture {
     /// to avoid locking the Tokio executor during the X11 call.
     async fn capture_frame(&self) -> Result<Frame> {
         let source = self.source.clone();
+        let debug_save_path = self.config.debug_save_path.clone();
+
         let handle = tokio::task::spawn_blocking(move || -> Result<Frame> {
             let image = source.capture_primary()?;
-            Self::encode_image_to_frame(image)
+            Self::encode_image_to_frame(image, debug_save_path.as_deref())
         });
 
         match handle.await {
@@ -364,7 +413,7 @@ mod tests {
         let mut img = RgbaImage::new(2, 2);
         img.put_pixel(0, 0, Rgba([255, 0, 0, 255]));
 
-        let result = X11Capture::encode_image_to_frame(img);
+        let result = X11Capture::encode_image_to_frame(img, None);
         assert!(result.is_ok());
 
         let frame = result.unwrap();

@@ -61,6 +61,9 @@ pub struct CaptureConfig {
     pub interval_seconds: u64,
     /// Maximum number of frames to hold in the RAM ring buffer.
     pub ring_buffer_capacity: usize,
+    /// (Debug Only) Optional directory to save raw captured frames to disk.
+    /// WARNING: This will cause SSD wear and tear. Use only for development.
+    pub debug_save_path: Option<String>,
 }
 
 impl Default for CaptureConfig {
@@ -68,8 +71,21 @@ impl Default for CaptureConfig {
         Self {
             interval_seconds: 30,
             ring_buffer_capacity: 64,
+            debug_save_path: None,
         }
     }
+}
+
+/// Strategy for the VLM prompt detail level.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
+pub enum PromptStrategy {
+    /// Concise summary focusing on the active application.
+    #[default]
+    Simple,
+    /// Balanced description with task context.
+    Standard,
+    /// High-detail extraction including visible text, window titles, and UI state.
+    Detailed,
 }
 
 /// Configuration for the local VLM engine (Ollama).
@@ -81,6 +97,8 @@ pub struct VlmConfig {
     pub model_name: String,
     /// Maximum wait time for model inference before failing.
     pub timeout_seconds: u64,
+    /// How much detail to request from the model.
+    pub prompt_strategy: PromptStrategy,
 }
 
 impl Default for VlmConfig {
@@ -89,6 +107,7 @@ impl Default for VlmConfig {
             ollama_host: "http://localhost:11434".to_string(),
             model_name: "moondream".to_string(),
             timeout_seconds: 60,
+            prompt_strategy: PromptStrategy::default(),
         }
     }
 }
@@ -96,6 +115,11 @@ impl Default for VlmConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_prompt_strategy_defaults() {
+        assert_eq!(PromptStrategy::default(), PromptStrategy::Simple);
+    }
 
     #[test]
     fn test_frame_instantiation() {
@@ -157,5 +181,6 @@ mod tests {
         assert_eq!(config.ollama_host, "http://localhost:11434");
         assert_eq!(config.model_name, "moondream");
         assert_eq!(config.timeout_seconds, 60);
+        assert_eq!(config.prompt_strategy, PromptStrategy::Simple);
     }
 }
