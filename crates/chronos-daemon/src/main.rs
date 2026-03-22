@@ -121,16 +121,36 @@ mod tests {
     #[tokio::test]
     async fn test_run_app_routing() {
         // Test Pause/Resume routing
-        assert!(run_app(Cli { command: Commands::Pause }).await.is_ok());
-        assert!(run_app(Cli { command: Commands::Resume }).await.is_ok());
+        assert!(
+            run_app(Cli {
+                command: Commands::Pause
+            })
+            .await
+            .is_ok()
+        );
+        assert!(
+            run_app(Cli {
+                command: Commands::Resume
+            })
+            .await
+            .is_ok()
+        );
 
         // Test Status routing (uses a dummy DB URL that might fail if data dir isn't writable,
         // but we can at least verify it reaches the DB init logic).
         // For a more robust test, we could further decouple the DB creation.
-        let cli = Cli { command: Commands::Status };
+        let cli = Cli {
+            command: Commands::Status,
+        };
         let _ = run_app(cli).await;
 
-        let cli = Cli { command: Commands::Query { from: None, to: None, limit: 10 } };
+        let cli = Cli {
+            command: Commands::Query {
+                from: None,
+                to: None,
+                limit: 10,
+            },
+        };
         let _ = run_app(cli).await;
     }
 }
