@@ -776,7 +776,6 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   cargo fmt --all -- --check        # ✅
   cargo clippy --workspace --all-targets -- -D warnings  # ✅
   cargo test --workspace            # ✅
-  cargo test --workspace            # ✅
   ```
 
 - [x] **9.5** (Optional) Manual smoke test on a real X11 machine:

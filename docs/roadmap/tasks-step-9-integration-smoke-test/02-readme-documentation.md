@@ -8,7 +8,7 @@
 - [x] In the root repository directory, edit the existing `README.md` or create it if missing.
 - [x] Add the project name and description.
 - [x] Add the privacy statement: "100% local, never sends data externally."
-- [x] Add prerequisites: Rust 1.75+ and Ollama with `moondream` model pulled.
+- [x] Add prerequisites: Rust 1.94+ and Ollama with `moondream` model pulled.
 - [x] Add build instructions (`cargo build --workspace`).
 - [x] Add Quick Start examples (e.g. `cargo run -p chronos-daemon -- start`).
 - [x] Add a Query example (e.g. `cargo run -p chronos-daemon -- query --from 2025-01-01`).
