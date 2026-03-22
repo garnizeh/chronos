@@ -80,12 +80,11 @@ impl<V: VisionInference> CaptureEngine<V> {
 }
 
 /// Helper to identify transient errors that are worth retrying.
-#[allow(clippy::match_like_matches_macro)]
 fn is_transient(err: &ChronosError) -> bool {
-    match err {
-        ChronosError::Timeout(_) | ChronosError::Inference(_) | ChronosError::Database(_) => true,
-        _ => false,
-    }
+    matches!(
+        err,
+        ChronosError::Timeout(_) | ChronosError::Inference(_) | ChronosError::Database(_)
+    )
 }
 
 #[cfg(test)]
