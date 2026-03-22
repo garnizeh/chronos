@@ -58,35 +58,43 @@ Built for performance, safety, and operational simplicity:
 
 ## 🏗️ Build & Development
 
-We use `just` instead of bare `cargo` commands to streamline the development lifecycle.
+We use `just` to encapsulate workflows, but standard `cargo` commands work as expected.
 
 ```bash
-# Install dependencies, setup local environment
-just setup
+# 1. Build the entire workspace
+cargo build --workspace
 
-# Reset and migrate the SQLite database
-just db-reset
-
-# Run the exact CI pipeline locally before committing to catch errors early
-just ci-local
-
-# Build the release binary
-just build-release
+# 2. (Recommended) Use just for development
+just setup         # Install dependencies
+just ci-local      # Run full linting and tests locally
+just build-release # Optimized binary
 ```
 
 ## 🚀 Quick Start
 
-Getting started is as simple as running the daemon:
+Ensure **Ollama** is running (`ollama serve`) and you have pulled the model (`ollama pull moondream`).
 
+### 1. Start the Capture Daemon
 ```bash
-# Start the capture daemon in the foreground
+# Via cargo
+cargo run -p chronos-daemon -- start
+
+# Via just
 just run chronos-daemon start
+```
 
-# Query your activity logs from a specific date
-just run chronos-daemon query --from 2025-01-01
+### 2. Query Your Activity
+```bash
+# Query the 10 most recent logs
+cargo run -p chronos-daemon -- query
 
-# Check the system and daemon status
-just run chronos-daemon status
+# Filter by date (YYYY-MM-DD or RFC3339)
+cargo run -p chronos-daemon -- query --from 2025-01-01 --limit 20
+```
+
+### 3. Check System Status
+```bash
+cargo run -p chronos-daemon -- status
 ```
 
 ## 📉 Project Status
