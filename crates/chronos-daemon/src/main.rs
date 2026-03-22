@@ -106,11 +106,23 @@ where
     });
 
     // Run the pipeline (this blocks until RX is closed or Ctrl+C)
-    // In our current architecture, Ctrl+C is handled by the tokio runtime implicitly
-    // for this top-level call.
-    engine.run_pipeline(rx).await?;
+    // We use a select! to handle graceful shutdown signals.
+    let mut pipeline_handle = tokio::spawn(async move { engine.run_pipeline(rx).await });
 
-    capture_handle.abort();
+    tokio::select! {
+        res = &mut pipeline_handle => {
+            // Pipeline finished on its own (rx closed)
+            res??;
+        }
+        _ = tokio::signal::ctrl_c() => {
+            info!("Shutdown signal received, closing capture loop...");
+            capture_handle.abort();
+            // Await the pipeline to finish processing remaining frames in the queue
+            pipeline_handle.await??;
+            info!("Pipeline drained. Shutdown complete.");
+        }
+    }
+
     Ok(())
 }
 
