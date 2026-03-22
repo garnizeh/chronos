@@ -97,11 +97,19 @@ fn parse_date(s: &str) -> anyhow::Result<DateTime<Utc>> {
 }
 
 fn truncate(s: &str, max: usize) -> String {
-    if s.len() > max {
-        format!("{}...", &s[..max - 3])
-    } else {
-        s.to_string()
+    if s.len() <= max {
+        return s.to_string();
     }
+    let end = max.saturating_sub(3);
+    // Find the largest valid byte boundary <= end
+    let boundary = s
+        .char_indices()
+        .map(|(i, _)| i)
+        .take_while(|&i| i <= end)
+        .last()
+        .unwrap_or(0);
+
+    format!("{}...", &s[..boundary])
 }
 
 #[cfg(test)]
@@ -140,6 +148,11 @@ mod tests {
         assert_eq!(truncate("hello", 10), "hello");
         assert_eq!(truncate("hello world", 5), "he...");
         assert_eq!(truncate("exactly", 7), "exactly");
+        // UTF-8 safe truncation: 🦀 is 4 bytes.
+        // max 7 -> end 4. boundary at 4. "🦀..."
+        assert_eq!(truncate("🦀🦀🦀", 7), "🦀...");
+        // max 6 -> end 3. boundary at 0. "..."
+        assert_eq!(truncate("🦀🦀🦀", 6), "...");
     }
 
     #[tokio::test]

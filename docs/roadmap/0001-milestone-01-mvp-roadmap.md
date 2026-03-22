@@ -639,7 +639,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 **Crate(s):** `chronos-daemon`
 
 **Tasks:**
-> 📋 **Detailed tasks:** [tasks-step-8-cli-query-interface/](file:///home/userone/Code/github/chronos/docs/roadmap/tasks-step-8-cli-query-interface/)
+> 📋 **Detailed tasks:** [tasks-step-8-cli-query-interface/](tasks-step-8-cli-query-interface/)
 
 
 
