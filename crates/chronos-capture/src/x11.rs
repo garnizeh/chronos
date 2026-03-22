@@ -164,7 +164,9 @@ impl X11Capture {
         let height = image.height();
 
         if width == 0 || height == 0 {
-            return Err(ChronosError::Capture("Cannot encode empty image".to_string()));
+            return Err(ChronosError::Capture(
+                "Cannot encode empty image".to_string(),
+            ));
         }
 
         // Encode to PNG purely in RAM (no SSD wear/tear - Architecture Rule)
