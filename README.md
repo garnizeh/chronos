@@ -76,9 +76,12 @@ Ensure **Ollama** is running (`ollama serve`) and you have pulled the model (`ol
 
 ### 1. Start the Capture Daemon
 ```bash
-# Via cargo
+# Start with default 'simple' analysis
 cargo run -p chronos-daemon -- start
 
+# Start with 'detailed' analysis for richer logs
+cargo run -p chronos-daemon -- start --prompt-strategy detailed
+```
 # Via just
 just run chronos-daemon start
 ```

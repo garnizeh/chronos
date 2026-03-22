@@ -24,7 +24,11 @@ pub struct Cli {
 pub enum Commands {
     /// Start the background capture daemon.
     /// This initiates the continuous screen capture and VLM analysis loop.
-    Start,
+    Start {
+        /// Detail level for VLM analysis (simple, standard, detailed).
+        #[arg(long, default_value = "simple")]
+        prompt_strategy: String,
+    },
 
     /// Query the semantic logs stored in the database.
     Query {
@@ -58,8 +62,13 @@ mod tests {
 
     #[test]
     fn test_cli_parse_start() {
-        let cli = Cli::parse_from(["chronos", "start"]);
-        assert_eq!(cli.command, Commands::Start);
+        let cli = Cli::parse_from(["chronos", "start", "--prompt-strategy", "detailed"]);
+        match cli.command {
+            Commands::Start { prompt_strategy } => {
+                assert_eq!(prompt_strategy, "detailed");
+            }
+            _ => panic!("Expected Start command"),
+        }
     }
 
     #[test]

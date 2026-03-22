@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
 /// Separating this from `main()` allows us to unit test the routing logic.
 pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Commands::Start => handle_start(cli.db_url).await?,
+        Commands::Start { prompt_strategy } => handle_start(cli.db_url, prompt_strategy).await?,
         Commands::Query { from, to, limit } => {
             let url = resolve_db_url(cli.db_url)?;
             let db = Database::new(&url).await?;
@@ -56,7 +56,10 @@ pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
 ///
 /// **Go Parallel:** This wires up the "main loop" of your application,
 /// similar to initializing your service dependencies and starting a server.
-async fn handle_start(db_url_override: Option<String>) -> anyhow::Result<()> {
+async fn handle_start(
+    db_url_override: Option<String>,
+    prompt_strategy: String,
+) -> anyhow::Result<()> {
     info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
 
     // 1. Initialize Components
@@ -64,8 +67,23 @@ async fn handle_start(db_url_override: Option<String>) -> anyhow::Result<()> {
     info!("Connecting to database: {db_url}");
     let db = Database::new(&db_url).await?;
 
+    // Parse prompt strategy
+    let strategy = match prompt_strategy.to_lowercase().as_str() {
+        "simple" => chronos_core::models::PromptStrategy::Simple,
+        "standard" => chronos_core::models::PromptStrategy::Standard,
+        "detailed" => chronos_core::models::PromptStrategy::Detailed,
+        _ => {
+            tracing::warn!("Unknown prompt strategy '{}', defaulting to 'simple'", prompt_strategy);
+            chronos_core::models::PromptStrategy::Simple
+        }
+    };
+
     let capture = X11Capture::new(CaptureConfig::default());
-    let vision = OllamaVision::new(VlmConfig::default())?;
+    let vlm_config = VlmConfig {
+        prompt_strategy: strategy,
+        ..VlmConfig::default()
+    };
+    let vision = OllamaVision::new(vlm_config)?;
 
     // 2. Run Orchestrator
     info!("Pipeline active. Press Ctrl+C to stop.");
