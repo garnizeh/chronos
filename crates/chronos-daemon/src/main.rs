@@ -34,7 +34,10 @@ async fn main() -> anyhow::Result<()> {
 /// Separating this from `main()` allows us to unit test the routing logic.
 pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Commands::Start { prompt_strategy } => handle_start(cli.db_url, prompt_strategy).await?,
+        Commands::Start {
+            prompt_strategy,
+            debug_save_path,
+        } => handle_start(cli.db_url, prompt_strategy, debug_save_path).await?,
         Commands::Query { from, to, limit } => {
             let url = resolve_db_url(cli.db_url)?;
             let db = Database::new(&url).await?;
@@ -59,6 +62,7 @@ pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
 async fn handle_start(
     db_url_override: Option<String>,
     prompt_strategy: String,
+    debug_save_path: Option<String>,
 ) -> anyhow::Result<()> {
     info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
 
@@ -73,12 +77,19 @@ async fn handle_start(
         "standard" => chronos_core::models::PromptStrategy::Standard,
         "detailed" => chronos_core::models::PromptStrategy::Detailed,
         _ => {
-            tracing::warn!("Unknown prompt strategy '{}', defaulting to 'simple'", prompt_strategy);
+            tracing::warn!(
+                "Unknown prompt strategy '{}', defaulting to 'simple'",
+                prompt_strategy
+            );
             chronos_core::models::PromptStrategy::Simple
         }
     };
 
-    let capture = X11Capture::new(CaptureConfig::default());
+    let capture_config = CaptureConfig {
+        debug_save_path,
+        ..CaptureConfig::default()
+    };
+    let capture = X11Capture::new(capture_config);
     let vlm_config = VlmConfig {
         prompt_strategy: strategy,
         ..VlmConfig::default()

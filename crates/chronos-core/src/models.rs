@@ -61,6 +61,9 @@ pub struct CaptureConfig {
     pub interval_seconds: u64,
     /// Maximum number of frames to hold in the RAM ring buffer.
     pub ring_buffer_capacity: usize,
+    /// (Debug Only) Optional directory to save raw captured frames to disk.
+    /// WARNING: This will cause SSD wear and tear. Use only for development.
+    pub debug_save_path: Option<String>,
 }
 
 impl Default for CaptureConfig {
@@ -68,6 +71,7 @@ impl Default for CaptureConfig {
         Self {
             interval_seconds: 30,
             ring_buffer_capacity: 64,
+            debug_save_path: None,
         }
     }
 }

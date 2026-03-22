@@ -28,6 +28,11 @@ pub enum Commands {
         /// Detail level for VLM analysis (simple, standard, detailed).
         #[arg(long, default_value = "simple")]
         prompt_strategy: String,
+
+        /// (Debug Only) Directory to save raw captured frames to disk.
+        /// WARNING: This will cause SSD wear and tear. Use only for development.
+        #[arg(long)]
+        debug_save_path: Option<String>,
     },
 
     /// Query the semantic logs stored in the database.
@@ -62,10 +67,11 @@ mod tests {
 
     #[test]
     fn test_cli_parse_start() {
-        let cli = Cli::parse_from(["chronos", "start", "--prompt-strategy", "detailed"]);
+        let cli = Cli::parse_from(["chronos", "start", "--prompt-strategy", "detailed", "--debug-save-path", "/tmp/debug"]);
         match cli.command {
-            Commands::Start { prompt_strategy } => {
+            Commands::Start { prompt_strategy, debug_save_path } => {
                 assert_eq!(prompt_strategy, "detailed");
+                assert_eq!(debug_save_path, Some("/tmp/debug".to_string()));
             }
             _ => panic!("Expected Start command"),
         }
