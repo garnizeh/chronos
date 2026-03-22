@@ -1,9 +1,12 @@
 use chronos_capture::x11::X11Capture;
 use chronos_core::models::{CaptureConfig, VlmConfig};
-use chronos_daemon::cli::{Cli, Commands};
-use chronos_daemon::database::Database;
-use chronos_daemon::handlers::{handle_query, handle_status};
-use chronos_daemon::pipeline::CaptureEngine;
+#[allow(clippy::redundant_crate_prefix)]
+use chronos_daemon::{
+    cli::{Cli, Commands},
+    database::Database,
+    handlers::{handle_query, handle_status},
+    pipeline::CaptureEngine,
+};
 use chronos_inference::ollama::OllamaVision;
 use clap::Parser;
 use tracing::{Level, info};
@@ -39,8 +42,8 @@ pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
             let db = Database::new(&url).await?;
             handle_status(&db, &url).await?
         }
-        Commands::Pause => handle_pause()?,
-        Commands::Resume => handle_resume()?,
+        Commands::Pause => handle_pause(),
+        Commands::Resume => handle_resume(),
     }
 
     Ok(())
@@ -55,7 +58,7 @@ async fn handle_start() -> anyhow::Result<()> {
 
     // 1. Initialize Components
     let db_url = get_database_url()?;
-    info!("Connecting to database: {}", db_url);
+    info!("Connecting to database: {db_url}");
     let db = Database::new(&db_url).await?;
 
     let capture = X11Capture::new(CaptureConfig::default());
@@ -70,6 +73,9 @@ async fn handle_start() -> anyhow::Result<()> {
 ///
 /// **Go Parallel:** This is the equivalent of a `StartServer(deps)` function
 /// in Go that wires up the dependencies and enters the main loop.
+///
+/// # Errors
+/// Returns an error if the pipeline fails or the capture loop is interrupted unexpectedly.
 pub async fn run_orchestrator<V, C>(vision: V, capture: C, db: Database) -> anyhow::Result<()>
 where
     V: chronos_core::traits::VisionInference + Send + Sync + 'static,
@@ -114,14 +120,12 @@ fn get_database_url() -> anyhow::Result<String> {
     Ok(format!("sqlite://{}", db_path.to_string_lossy()))
 }
 
-fn handle_pause() -> anyhow::Result<()> {
+fn handle_pause() {
     println!("Pause command not yet implemented in v0.1. Full IPC coming in v0.2.");
-    Ok(())
 }
 
-fn handle_resume() -> anyhow::Result<()> {
+fn handle_resume() {
     println!("Resume command not yet implemented in v0.1. Full IPC coming in v0.2.");
-    Ok(())
 }
 
 #[cfg(test)]
