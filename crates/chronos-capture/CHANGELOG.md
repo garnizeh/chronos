@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/garnizeh/chronos/compare/chronos-capture-v0.4.1...chronos-capture-v0.5.0) (2026-03-22)
+
+
+### Features
+
+* **chronos-capture:** improve x11 coverage and error handling ([4323cd3](https://github.com/garnizeh/chronos/commit/4323cd34c350acf6d078b893f445e05ffe7e7d10))
+
 ## [0.4.1](https://github.com/garnizeh/chronos/compare/chronos-capture-v0.4.0...chronos-capture-v0.4.1) (2026-03-21)
 
 ## [0.4.0](https://github.com/garnizeh/chronos/compare/chronos-capture-v0.3.0...chronos-capture-v0.4.0) (2026-03-21)

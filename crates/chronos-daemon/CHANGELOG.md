@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.7.0](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.6.0...chronos-daemon-v0.7.0) (2026-03-22)
+
+
+### Features
+
+* **chronos-daemon:** achieve full orchestration coverage via run_orchestrator ([7f5598b](https://github.com/garnizeh/chronos/commit/7f5598bae562f42df20b621f0375c3c665bec5ed))
+* **chronos-daemon:** implement cli and query interface ([72cfb4a](https://github.com/garnizeh/chronos/commit/72cfb4ab22c8e7c7e1b57407dd66bb6036d904df))
+* **chronos-daemon:** implement graceful shutdown with ctrl_c ([937c411](https://github.com/garnizeh/chronos/commit/937c41188264e29c5bd6ad1d8fb79ec9d94c29ad))
+* **chronos-daemon:** improve main.rs coverage by extracting run_app ([cc47fc2](https://github.com/garnizeh/chronos/commit/cc47fc22ae4c0529beee21582b335b633ef08c09))
+* **chronos-daemon:** improve testability and increase coverage ([2a40e4d](https://github.com/garnizeh/chronos/commit/2a40e4dd757006c86490dfff898e7b75f3d13bb4))
+
+
+### Bug Fixes
+
+* address multiple security, usability, and test findings ([35c4398](https://github.com/garnizeh/chronos/commit/35c439860bbba5d8017d3c66352d3945f365a8fd))
+* address multiple security, usability, and test findings ([574c61b](https://github.com/garnizeh/chronos/commit/574c61bf04daae2602c05946634a795adce390ca))
+* **chronos-daemon:** enforce limit in date-range queries ([a703afe](https://github.com/garnizeh/chronos/commit/a703afec05efaf3ae9fbaf2ac8977ae393a72fc5))
+* **chronos-daemon:** ensure proper task monitoring and exit code propagation ([460431c](https://github.com/garnizeh/chronos/commit/460431cb7392477104e6fb3150d5ff2d097cdef4))
+* **chronos-daemon:** ensure truncate is UTF-8 safe ([ef5e9c5](https://github.com/garnizeh/chronos/commit/ef5e9c5a9f241525dfc78e15460e56bb36d0b3ef))
+* improve inference resiliency and query normalization ([5f521c3](https://github.com/garnizeh/chronos/commit/5f521c33b9c44eca58c20e73727d21f423b8afaa))
+
 ## [0.6.0](https://github.com/garnizeh/chronos/compare/chronos-daemon-v0.5.1...chronos-daemon-v0.6.0) (2026-03-21)
 
 
