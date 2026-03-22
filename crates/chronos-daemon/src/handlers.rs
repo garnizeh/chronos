@@ -20,7 +20,7 @@ pub async fn handle_query(
     db: &Database,
     from: Option<String>,
     to: Option<String>,
-    limit: i64,
+    limit: u64,
 ) -> anyhow::Result<()> {
     let logs = if from.is_some() || to.is_some() {
         // Parse dates. For v0.1, we expect RFC3339 or simple YYYY-MM-DD.

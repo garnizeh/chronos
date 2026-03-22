@@ -89,21 +89,14 @@ impl Database {
         &self,
         from: DateTime<Utc>,
         to: DateTime<Utc>,
-        limit: i64,
+        limit: u64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
-        if limit < 0 {
-            return Err(chronos_core::error::ChronosError::InvalidInput(format!(
-                "Limit must be non-negative, got {}",
-                limit
-            )));
-        }
-
         let rows = sqlx::query_as::<_, SemanticLogRow>(
             "SELECT * FROM semantic_logs WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp ASC LIMIT ?",
         )
         .bind(from.to_rfc3339())
         .bind(to.to_rfc3339())
-        .bind(limit)
+        .bind(limit as i64)
         .fetch_all(&self.pool)
         .await
         .map_err(|e: sqlx::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
@@ -128,19 +121,12 @@ impl Database {
     /// Get the most recent logs, up to the specified limit.
     pub async fn get_recent_logs(
         &self,
-        limit: i64,
+        limit: u64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
-        if limit < 0 {
-            return Err(chronos_core::error::ChronosError::InvalidInput(format!(
-                "Limit must be non-negative, got {}",
-                limit
-            )));
-        }
-
         let rows = sqlx::query_as::<_, SemanticLogRow>(
             "SELECT * FROM semantic_logs ORDER BY timestamp DESC LIMIT ?",
         )
-        .bind(limit)
+        .bind(limit as i64)
         .fetch_all(&self.pool)
         .await
         .map_err(|e: sqlx::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
@@ -373,24 +359,25 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_logs_by_date_range_invalid_limit() {
+    async fn test_get_recent_logs_with_limit() {
         let db = Database::new_in_memory().await.unwrap();
-        let result = db.get_logs_by_date_range(Utc::now(), Utc::now(), -1).await;
-        assert!(result.is_err());
-    }
+        // Insert a dummy log
+        db.insert_semantic_log(&SemanticLog {
+            id: Ulid::new(),
+            source_frame_id: Ulid::new(),
+            timestamp: Utc::now(),
+            description: "Recent 1".to_string(),
+            active_application: None,
+            activity_category: None,
+            key_entities: vec![],
+            confidence_score: 1.0,
+            raw_vlm_response: "".to_string(),
+        })
+        .await
+        .unwrap();
 
-    #[tokio::test]
-    async fn test_get_recent_logs_invalid_limit() {
-        let db = Database::new_in_memory().await.unwrap();
-        let result = db.get_recent_logs(-1).await;
-
-        assert!(result.is_err());
-        match result {
-            Err(chronos_core::error::ChronosError::InvalidInput(msg)) => {
-                assert!(msg.contains("Limit must be non-negative"));
-            }
-            _ => panic!("Expected ChronosError::InvalidInput, got {:?}", result),
-        }
+        let recent = db.get_recent_logs(1).await.unwrap();
+        assert_eq!(recent.len(), 1);
     }
 
     #[tokio::test]

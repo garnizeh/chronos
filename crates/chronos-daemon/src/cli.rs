@@ -31,7 +31,7 @@ pub enum Commands {
 
         /// Maximum number of results to return
         #[arg(long, default_value = "10")]
-        limit: i64,
+        limit: u64,
     },
 
     /// Show system status and log statistics
