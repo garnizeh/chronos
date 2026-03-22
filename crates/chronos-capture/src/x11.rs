@@ -33,20 +33,36 @@ impl CaptureSource for XcapSource {
         let monitors = Monitor::all()
             .map_err(|e| ChronosError::Capture(format!("Failed to enumerate monitors: {}", e)))?;
 
+        if monitors.is_empty() {
+            return Err(ChronosError::Capture(
+                "No monitors detected — cannot capture screen".to_string(),
+            ));
+        }
+
         let mut primary = None;
-        for m in monitors {
-            if m.is_primary().map_err(|e| {
-                ChronosError::Capture(format!("Failed to check if monitor is primary: {}", e))
-            })? {
+        let mut first = None;
+
+        for (i, m) in monitors.into_iter().enumerate() {
+            if i == 0 {
+                first = Some(m.clone());
+            }
+
+            // [JUSTIFIED GAP]: is_primary() can fail in specialized environments (e.g. nested X servers),
+            // but for v0.1 we proceed with fallback rather than failing the entire daemon.
+            if m.is_primary().unwrap_or(false) {
                 primary = Some(m);
                 break;
             }
         }
 
-        let primary = primary
-            .ok_or_else(|| ChronosError::Capture("No primary monitor detected".to_string()))?;
+        let target = if let Some(p) = primary {
+            p
+        } else {
+            tracing::warn!("No primary monitor detected; falling back to the first available monitor.");
+            first.expect("Monitors list is not empty, so first monitor must exist")
+        };
 
-        primary
+        target
             .capture_image()
             .map_err(|e| ChronosError::Capture(format!("Failed to capture image: {}", e)))
     }
