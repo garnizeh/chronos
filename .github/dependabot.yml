@@ -10,13 +10,15 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "06:00"
-    timezone: "UTC"
+      timezone: "UTC" # <-- Moved inside 'schedule'
+    
     # THE PRAGMATIC UPGRADE: Group all minor/patch crate updates into a single PR.
     # This prevents triggering 10 different heavy Rust CI pipeline runs simultaneously.
     groups:
       rust-crates:
         patterns:
           - "*"
+    
     # Ignore major version bumps for heavy UI/OS crates to prevent breaking changes
     # from automatically merging or creating noisy PRs until we are ready.
     ignore:
@@ -30,4 +32,4 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "06:00"
-    timezone: "UTC"
+      timezone: "UTC" # <-- Moved inside 'schedule'
