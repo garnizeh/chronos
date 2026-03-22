@@ -1,0 +1,33 @@
+# ==============================================================================
+# Chronos - Dependabot Configuration
+# ==============================================================================
+version: 2
+updates:
+  # 1. Rust Ecosystem (Cargo)
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    timezone: "UTC"
+    # THE PRAGMATIC UPGRADE: Group all minor/patch crate updates into a single PR.
+    # This prevents triggering 10 different heavy Rust CI pipeline runs simultaneously.
+    groups:
+      rust-crates:
+        patterns:
+          - "*"
+    # Ignore major version bumps for heavy UI/OS crates to prevent breaking changes
+    # from automatically merging or creating noisy PRs until we are ready.
+    ignore:
+      - dependency-name: "tokio"
+        update-types: ["version-update:semver-major"]
+
+  # 2. GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    timezone: "UTC"
