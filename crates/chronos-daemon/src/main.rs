@@ -54,16 +54,20 @@ pub async fn run_app(cli: Cli) -> anyhow::Result<()> {
 // [JUSTIFIED GAP]: This is the top-level orchestrator that wires up real OS drivers (X11),
 // real database files, and external Ollama local instances. Testing this end-to-end
 // in a unit-test environment is not pragmatic. Logic is tested in `chronos-daemon::pipeline`.
-async fn handle_start() -> anyhow::Result<()> {
-    info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
-
-    // 1. Initialize Database
+fn get_database_url() -> anyhow::Result<String> {
     let mut db_path = dirs::data_local_dir()
         .ok_or_else(|| anyhow::anyhow!("Could not find local data directory"))?;
     db_path.push("chronos");
     std::fs::create_dir_all(&db_path)?;
     db_path.push("chronos.db");
-    let db_url = format!("sqlite://{}", db_path.to_string_lossy());
+    Ok(format!("sqlite://{}", db_path.to_string_lossy()))
+}
+
+async fn handle_start() -> anyhow::Result<()> {
+    info!("Starting Chronos Daemon v{}", env!("CARGO_PKG_VERSION"));
+
+    // 1. Initialize Database
+    let db_url = get_database_url()?;
 
     info!("Connecting to database: {}", db_url);
     let db = Database::new(&db_url).await?;
@@ -152,5 +156,12 @@ mod tests {
             },
         };
         let _ = run_app(cli).await;
+    }
+
+    #[test]
+    fn test_get_database_url() {
+        let url = get_database_url().unwrap();
+        assert!(url.starts_with("sqlite://"));
+        assert!(url.contains("chronos.db"));
     }
 }
