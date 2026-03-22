@@ -1,6 +1,5 @@
 use chronos_capture::x11::X11Capture;
 use chronos_core::models::{CaptureConfig, VlmConfig};
-#[allow(clippy::redundant_crate_prefix)]
 use chronos_daemon::{
     cli::{Cli, Commands},
     database::Database,
