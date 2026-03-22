@@ -37,9 +37,10 @@ pub async fn handle_query(
             .unwrap_or_else(Utc::now);
 
         // If 'to' was date-only (YYYY-MM-DD), normalize to end-of-day
-        if let Some(_to_str) = to.as_deref().filter(|s| {
-            s.len() == 10 && s.chars().all(|c| c.is_numeric() || c == '-')
-        }) {
+        if let Some(_to_str) = to
+            .as_deref()
+            .filter(|s| s.len() == 10 && s.chars().all(|c| c.is_numeric() || c == '-'))
+        {
             to_dt = to_dt
                 .date_naive()
                 .and_hms_opt(23, 59, 59)
@@ -208,6 +209,16 @@ mod tests {
         .await;
         assert!(res.is_err());
         assert!(res.unwrap_err().to_string().contains("Invalid date range"));
+
+        // Test with RFC3339 (non-date-only path coverage)
+        let res = handle_query(
+            &db,
+            Some("2023-01-01T00:00:00Z".to_string()),
+            Some("2023-01-01T23:59:59Z".to_string()),
+            10,
+        )
+        .await;
+        assert!(res.is_ok());
     }
 
     #[test]
@@ -215,13 +226,14 @@ mod tests {
         // We test the logic manually since handle_query is async and hits DB
         let to_str = "2023-10-27";
         let dt = parse_date(to_str).unwrap();
-        
+
         // Manual check of what handle_query would do
-        let normalized = dt.date_naive()
+        let normalized = dt
+            .date_naive()
             .and_hms_opt(23, 59, 59)
             .and_then(|hms| Utc.from_local_datetime(&hms).single())
             .unwrap();
-        
+
         assert_eq!(normalized.hour(), 23);
         assert_eq!(normalized.minute(), 59);
         assert_eq!(normalized.second(), 59);

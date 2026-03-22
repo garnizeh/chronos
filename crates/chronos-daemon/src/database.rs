@@ -33,8 +33,7 @@ impl Database {
             .run(&pool)
             .await
             .map_err(|e: sqlx::migrate::MigrateError| {
-                // [JUSTIFIED GAP]: Migration errors are unrecoverable system faults
-                // and are tested via integration mocks where possible.
+                // [JUSTIFIED GAP]: Migration errors are unrecoverable system faults.
                 chronos_core::error::ChronosError::Database(e.to_string())
             })?;
 
@@ -475,16 +474,23 @@ mod tests {
         let result = Database::new("sqlite://invalid/path/that/cannot/exist/db.sqlite").await;
         assert!(result.is_err());
     }
-    
     #[tokio::test]
     async fn test_limit_overflow_protection() {
         let db = Database::new_in_memory().await.unwrap();
         let too_large_limit = i64::MAX as u64 + 1;
-        
-        let res = db.get_recent_logs(too_large_limit).await;
-        assert!(matches!(res, Err(chronos_core::error::ChronosError::InvalidInput(_))));
 
-        let res = db.get_logs_by_date_range(Utc::now(), Utc::now(), too_large_limit).await;
-        assert!(matches!(res, Err(chronos_core::error::ChronosError::InvalidInput(_))));
+        let res = db.get_recent_logs(too_large_limit).await;
+        assert!(matches!(
+            res,
+            Err(chronos_core::error::ChronosError::InvalidInput(_))
+        ));
+
+        let res = db
+            .get_logs_by_date_range(Utc::now(), Utc::now(), too_large_limit)
+            .await;
+        assert!(matches!(
+            res,
+            Err(chronos_core::error::ChronosError::InvalidInput(_))
+        ));
     }
 }
