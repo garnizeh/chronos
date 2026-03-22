@@ -13,11 +13,10 @@ use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Initialize logging
-    let subscriber = FmtSubscriber::builder()
+    // Initialize logging (using try_init to avoid panicking in tests where a subscriber is already set)
+    let _ = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
-        .finish();
-    tracing::subscriber::set_global_default(subscriber).expect("Setting default subscriber failed");
+        .try_init();
 
     let cli = Cli::parse();
     run_app(cli).await
