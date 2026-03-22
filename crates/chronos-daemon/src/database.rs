@@ -90,13 +90,7 @@ impl Database {
         to: DateTime<Utc>,
         limit: u64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
-        let limit_i64 = i64::try_from(limit).map_err(|_| {
-            chronos_core::error::ChronosError::InvalidInput(format!(
-                "Limit {} is too large (max: {})",
-                limit,
-                i64::MAX
-            ))
-        })?;
+        let limit_i64 = try_limit_i64(limit)?;
 
         let rows = sqlx::query_as::<_, SemanticLogRow>(
             "SELECT * FROM semantic_logs WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp ASC LIMIT ?",
@@ -130,13 +124,7 @@ impl Database {
         &self,
         limit: u64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
-        let limit_i64 = i64::try_from(limit).map_err(|_| {
-            chronos_core::error::ChronosError::InvalidInput(format!(
-                "Limit {} is too large (max: {})",
-                limit,
-                i64::MAX
-            ))
-        })?;
+        let limit_i64 = try_limit_i64(limit)?;
 
         let rows = sqlx::query_as::<_, SemanticLogRow>(
             "SELECT * FROM semantic_logs ORDER BY timestamp DESC LIMIT ?",
@@ -152,6 +140,17 @@ impl Database {
         }
         Ok(logs)
     }
+}
+
+/// Helper to convert a u64 limit to i64 safely for SQLite.
+fn try_limit_i64(limit: u64) -> Result<i64, chronos_core::error::ChronosError> {
+    i64::try_from(limit).map_err(|_| {
+        chronos_core::error::ChronosError::InvalidInput(format!(
+            "Limit {} is too large (max: {})",
+            limit,
+            i64::MAX
+        ))
+    })
 }
 
 /// Internal helper struct to map SQL rows to domain models.
