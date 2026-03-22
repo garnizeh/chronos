@@ -1,0 +1,42 @@
+# ==============================================================================
+# Chronos - AI Context Ignore List
+# ==============================================================================
+
+# 1. Rust Build Artifacts
+# The AI never needs to read compiled binaries or dependency object files.
+target/
+Cargo.lock
+
+# 2. Database & Persistent Storage
+# Prevent the AI from trying to parse raw binary database files or WAL logs.
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# 3. SQLx Cached Metadata
+# sqlx generates massive JSON files for offline compilation. These pollute the AI context.
+.sqlx/
+
+# 4. Captured Media & Ring Buffers
+# The AI should not attempt to read the raw PNG/JPEG frames captured by the daemon.
+*.png
+*.jpg
+*.jpeg
+captures/
+frames/
+
+# 5. Coverage & CI Reports
+# We already set this up; the AI doesn't need to read the raw LCOV metric data.
+lcov.info
+coverage/
+
+# 6. Environment & Secrets
+# Keep local API keys and configurations out of the AI's memory.
+.env
+*.env
+.env.*
+
+# 7. Version Control
+.git/

@@ -10,13 +10,20 @@ use ulid::Ulid;
 use xcap::Monitor;
 
 /// Trait to abstract the underlying platform-specific screen capture.
-/// This allows mocking the OS interaction for 100% test coverage.
+///
+/// By decoupling the OS-level capture logic from the `X11Capture` orchestrator,
+/// we can easily unit test the pipeline using mocks without requiring a live
+/// X11 connection or a physical monitor.
 pub trait CaptureSource: Send + Sync + 'static {
     /// Captures the primary monitor's current state as an RGBA image.
+    ///
+    /// Implementations should handle monitor discovery and image extraction.
     fn capture_primary(&self) -> Result<image::RgbaImage>;
 }
 
-/// The production implementation using the `xcap` crate.
+/// The production implementation of `CaptureSource` using the `xcap` crate.
+///
+/// This struct communicates directly with the X11 server to fetch raw pixels.
 pub struct XcapSource;
 
 impl CaptureSource for XcapSource {
@@ -55,7 +62,9 @@ impl CaptureSource for XcapSource {
 /// `tokio::task::spawn_blocking` (for one-offs) or `std::thread::spawn`
 /// (for an infinite loop).
 pub struct X11Capture {
+    /// User-defined configuration for capture frequency and buffers.
     config: CaptureConfig,
+    /// The engine used to actually pull pixels from the screen (Production or Mock).
     source: std::sync::Arc<dyn CaptureSource>,
 }
 
@@ -94,7 +103,7 @@ impl X11Capture {
 
         // Spawn a dedicated OS thread (NOT a Tokio task) for blocking X11 IO.
         std::thread::spawn(move || {
-            let interval = std::time::Duration::from_secs(config.interval_seconds.max(1));
+            let interval = std::time::Duration::from_secs(config.interval_seconds);
             let tick_interval = std::time::Duration::from_millis(100);
 
             loop {
@@ -139,6 +148,9 @@ impl X11Capture {
                     }
                 }
 
+                // Small tick to prevent tight loop on zero interval
+                std::thread::sleep(std::time::Duration::from_millis(1));
+
                 // Interruptible sleep: sleep in small "ticks" until interval is reached
                 let sleep_start = std::time::Instant::now();
                 while sleep_start.elapsed() < interval {
@@ -160,6 +172,12 @@ impl X11Capture {
         let width = image.width();
         let height = image.height();
 
+        if width == 0 || height == 0 {
+            return Err(ChronosError::Capture(
+                "Cannot encode empty image".to_string(),
+            ));
+        }
+
         // Encode to PNG purely in RAM (no SSD wear/tear - Architecture Rule)
         let mut buffer = Vec::new();
         image
@@ -178,7 +196,7 @@ impl X11Capture {
 
 #[async_trait]
 impl ImageCapture for X11Capture {
-    /// Captures a single frame synchronously on demand, but delegates to `spawn_blocking`
+    /// Captures a single frame asynchronously by delegating to `spawn_blocking`
     /// to avoid locking the Tokio executor during the X11 call.
     async fn capture_frame(&self) -> Result<Frame> {
         let source = self.source.clone();
@@ -195,6 +213,10 @@ impl ImageCapture for X11Capture {
             ))),
         }
     }
+
+    fn capture_interval_seconds(&self) -> u64 {
+        self.config.interval_seconds
+    }
 }
 
 #[cfg(test)]
@@ -210,10 +232,7 @@ mod tests {
     impl CaptureSource for MockSource {
         fn capture_primary(&self) -> Result<RgbaImage> {
             let res = self.result.lock().unwrap();
-            match &*res {
-                Ok(_) => Ok(RgbaImage::new(2, 2)),
-                Err(e) => Err(ChronosError::Capture(e.to_string())),
-            }
+            res.clone()
         }
     }
 
@@ -442,8 +461,26 @@ mod tests {
 
     #[test]
     fn test_start_capture_loop_encode_error() {
-        // PNG encoding 0x0 usually fails.
-        let result = X11Capture::encode_image_to_frame(RgbaImage::new(0, 0));
-        assert!(result.is_err() || result.is_ok()); // Just hit the branch
+        // Validation check for empty (0x0) images now returns Err.
+        // We run the loop with a mock source that returns a 0x0 image.
+        let config = CaptureConfig {
+            interval_seconds: 0,
+            ..Default::default()
+        };
+        let mock = Arc::new(MockSource {
+            result: Mutex::new(Ok(RgbaImage::new(0, 0))),
+        });
+        let capture = X11Capture::with_source(config, mock);
+
+        let (tx, _rx) = mpsc::channel(1);
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
+
+        let handle = capture.start_capture_loop(tx, shutdown_rx);
+
+        // Wait a bit for the loop to run at least once
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
+        shutdown_tx.send(true).unwrap();
+        handle.join().unwrap();
     }
 }

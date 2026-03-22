@@ -7,23 +7,29 @@ use thiserror::Error;
 /// crate provides a declarative macro (`#[derive(Error)]`) to automatically implement
 /// the `std::error::Error` and `std::fmt::Display` traits.
 /// This allows the caller to exhaustively match on specific error variants.
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Clone)]
 pub enum ChronosError {
+    /// Failed to capture a screen frame (e.g., X11 connection failure or display locked).
     #[error("Capture failed: {0}")]
     Capture(String),
 
+    /// The inference pipeline encountered an error during VLM processing or parsing.
     #[error("Inference pipeline failed: {0}")]
     Inference(String),
 
+    /// A persistent storage error occurred while interacting with SQLite.
     #[error("Database error: {0}")]
     Database(String),
 
+    /// The provided configuration is invalid or missing required components.
     #[error("Configuration error: {0}")]
     Config(String),
 
+    /// An operation (like a VLM request) took longer than the allocated grace period.
     #[error("Operation timed out: {0}")]
     Timeout(String),
 
+    /// Provided input (e.g., query dates or limits) is malformed or out of range.
     #[error("Invalid input: {0}")]
     InvalidInput(String),
 }

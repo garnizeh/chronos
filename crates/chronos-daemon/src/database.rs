@@ -1,11 +1,13 @@
 use chrono::{DateTime, Utc};
 use chronos_core::models::SemanticLog;
 use sqlx::SqlitePool;
-use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use std::str::FromStr;
 
 /// The Database struct encapsulates the SQLite connection pool.
 /// In Go, this would be equivalent to a struct holding a `*sql.DB`.
 pub struct Database {
+    /// The underlying sqlx connection pool for SQLite.
     pool: SqlitePool,
 }
 
@@ -13,13 +15,17 @@ impl Database {
     /// Create a new Database instance connecting to the given URL.
     /// This also runs any pending migrations automatically.
     pub async fn new(url: &str) -> Result<Self, chronos_core::error::ChronosError> {
+        let options = SqliteConnectOptions::from_str(url)
+            .map_err(|e| chronos_core::error::ChronosError::Database(e.to_string()))?
+            .create_if_missing(true);
+
         let pool = SqlitePoolOptions::new()
             // TODO(provisional): Using 5 connections for SQLite.
             // Rationale: Keeps resource footprint low for a background daemon while allowing concurrent CLI queries.
             // Trigger: Scaling to 10+ concurrent dashboard users or heavy background analytics.
             // Direction: Move to a config-based pool size or dynamic adjustment.
             .max_connections(5)
-            .connect(url)
+            .connect_with(options)
             .await
             .map_err(|e: sqlx::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
 
@@ -28,8 +34,7 @@ impl Database {
             .run(&pool)
             .await
             .map_err(|e: sqlx::migrate::MigrateError| {
-                // [JUSTIFIED GAP]: Migration errors are unrecoverable system faults
-                // and are tested via integration mocks where possible.
+                // [JUSTIFIED GAP]: Migration errors are unrecoverable system faults.
                 chronos_core::error::ChronosError::Database(e.to_string())
             })?;
 
@@ -79,17 +84,21 @@ impl Database {
         Ok(())
     }
 
-    /// Retrieve logs within a specific date range.
+    /// Retrieve logs within a specific date range, up to the specified limit.
     pub async fn get_logs_by_date_range(
         &self,
         from: DateTime<Utc>,
         to: DateTime<Utc>,
+        limit: u64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
+        let limit_i64 = try_limit_i64(limit)?;
+
         let rows = sqlx::query_as::<_, SemanticLogRow>(
-            "SELECT * FROM semantic_logs WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp ASC",
+            "SELECT * FROM semantic_logs WHERE timestamp BETWEEN ? AND ? ORDER BY timestamp ASC LIMIT ?",
         )
         .bind(from.to_rfc3339())
         .bind(to.to_rfc3339())
+        .bind(limit_i64)
         .fetch_all(&self.pool)
         .await
         .map_err(|e: sqlx::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
@@ -114,19 +123,14 @@ impl Database {
     /// Get the most recent logs, up to the specified limit.
     pub async fn get_recent_logs(
         &self,
-        limit: i64,
+        limit: u64,
     ) -> Result<Vec<SemanticLog>, chronos_core::error::ChronosError> {
-        if limit < 0 {
-            return Err(chronos_core::error::ChronosError::InvalidInput(format!(
-                "Limit must be non-negative, got {}",
-                limit
-            )));
-        }
+        let limit_i64 = try_limit_i64(limit)?;
 
         let rows = sqlx::query_as::<_, SemanticLogRow>(
             "SELECT * FROM semantic_logs ORDER BY timestamp DESC LIMIT ?",
         )
-        .bind(limit)
+        .bind(limit_i64)
         .fetch_all(&self.pool)
         .await
         .map_err(|e: sqlx::Error| chronos_core::error::ChronosError::Database(e.to_string()))?;
@@ -139,18 +143,42 @@ impl Database {
     }
 }
 
+/// Helper to convert a u64 limit to i64 safely for SQLite.
+fn try_limit_i64(limit: u64) -> Result<i64, chronos_core::error::ChronosError> {
+    i64::try_from(limit).map_err(|_| {
+        chronos_core::error::ChronosError::InvalidInput(format!(
+            "Limit {} is too large (max: {})",
+            limit,
+            i64::MAX
+        ))
+    })
+}
+
 /// Internal helper struct to map SQL rows to domain models.
-/// sqlx's `FromRow` needs specific types that match the DB schema.
+///
+/// **Didactic:** sqlx's `FromRow` requires a struct that exactly matches the
+/// database schema. We decouple this from our core `SemanticLog` model to
+/// allow for data transformations (like parsing JSON strings or RFC3339 dates)
+/// at the boundary.
 #[derive(sqlx::FromRow)]
 struct SemanticLogRow {
+    /// Primary key (ULID string).
     id: String,
+    /// RFC3339 timestamp string.
     timestamp: String,
+    /// Reference to the source frame (ULID string).
     source_frame_id: String,
+    /// Model's analysis description.
     description: String,
+    /// Optional application name.
     active_application: Option<String>,
+    /// Optional category.
     activity_category: Option<String>,
+    /// JSON string of key entities.
     key_entities: String,
+    /// Model confidence score.
     confidence_score: f64,
+    /// Full raw response from the VLM.
     raw_vlm_response: String,
 }
 
@@ -323,26 +351,61 @@ mod tests {
         db.insert_semantic_log(&log_at_start).await.unwrap();
         db.insert_semantic_log(&log_at_end).await.unwrap();
         db.insert_semantic_log(&log_outside).await.unwrap();
-
-        let range_logs = db.get_logs_by_date_range(start, end).await.unwrap();
         // Should include both start and end (inclusivity check)
+        let range_logs = db.get_logs_by_date_range(start, end, 10).await.unwrap();
         assert_eq!(range_logs.len(), 2);
         assert!(range_logs.iter().any(|l| l.description == "At start"));
         assert!(range_logs.iter().any(|l| l.description == "At end"));
     }
 
     #[tokio::test]
-    async fn test_get_recent_logs_invalid_limit() {
+    async fn test_get_logs_by_date_range_with_limit() {
         let db = Database::new_in_memory().await.unwrap();
-        let result = db.get_recent_logs(-1).await;
+        let now = Utc::now();
+        let start = now - chrono::Duration::try_minutes(10).unwrap();
+        let end = now;
 
-        assert!(result.is_err());
-        match result {
-            Err(chronos_core::error::ChronosError::InvalidInput(msg)) => {
-                assert!(msg.contains("Limit must be non-negative"));
-            }
-            _ => panic!("Expected ChronosError::InvalidInput, got {:?}", result),
+        // Insert 5 logs in range
+        for i in 0..5 {
+            let log = SemanticLog {
+                id: Ulid::new(),
+                timestamp: start + chrono::Duration::try_seconds(i).unwrap(),
+                source_frame_id: Ulid::new(),
+                description: format!("Log {}", i),
+                active_application: None,
+                activity_category: None,
+                key_entities: vec![],
+                confidence_score: 1.0,
+                raw_vlm_response: "".to_string(),
+            };
+            db.insert_semantic_log(&log).await.unwrap();
         }
+
+        // Query with limit 2
+        let logs = db.get_logs_by_date_range(start, end, 2).await.unwrap();
+        assert_eq!(logs.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_get_recent_logs_with_limit() {
+        let db = Database::new_in_memory().await.unwrap();
+        // Insert a dummy log
+        db.insert_semantic_log(&SemanticLog {
+            id: Ulid::new(),
+            source_frame_id: Ulid::new(),
+            timestamp: Utc::now(),
+            description: "Recent 1".to_string(),
+            active_application: None,
+            activity_category: None,
+            key_entities: vec![],
+            confidence_score: 1.0,
+            raw_vlm_response: "".to_string(),
+        })
+        .await
+        .unwrap();
+
+        let recent = db.get_recent_logs(1).await.unwrap();
+        assert_eq!(recent.len(), 1);
     }
 
     #[tokio::test]
@@ -423,5 +486,24 @@ mod tests {
         // Use an invalid sqlite URI to trigger connection error
         let result = Database::new("sqlite://invalid/path/that/cannot/exist/db.sqlite").await;
         assert!(result.is_err());
+    }
+    #[tokio::test]
+    async fn test_limit_overflow_protection() {
+        let db = Database::new_in_memory().await.unwrap();
+        let too_large_limit = i64::MAX as u64 + 1;
+
+        let res = db.get_recent_logs(too_large_limit).await;
+        assert!(matches!(
+            res,
+            Err(chronos_core::error::ChronosError::InvalidInput(_))
+        ));
+
+        let res = db
+            .get_logs_by_date_range(Utc::now(), Utc::now(), too_large_limit)
+            .await;
+        assert!(matches!(
+            res,
+            Err(chronos_core::error::ChronosError::InvalidInput(_))
+        ));
     }
 }

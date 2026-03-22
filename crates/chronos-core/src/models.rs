@@ -10,10 +10,15 @@ use ulid::Ulid;
 /// This enforces our architecture constraint at compile time: Frames live purely in RAM.
 #[derive(Debug, Clone)]
 pub struct Frame {
+    /// Unique identifier for this specific capture event.
     pub id: Ulid,
+    /// Exact moment the frame was captured.
     pub timestamp: DateTime<Utc>,
+    /// Raw uncompressed image bytes (e.g., RGBA).
     pub image_data: Vec<u8>,
+    /// Screen width in pixels at capture time.
     pub width: u32,
+    /// Screen height in pixels at capture time.
     pub height: u32,
 }
 
@@ -26,14 +31,23 @@ pub struct Frame {
 /// logic at compile time, achieving the exact same objective with zero runtime reflection cost.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SemanticLog {
+    /// Unique identifier for this log entry.
     pub id: Ulid,
+    /// Moment the event was recorded.
     pub timestamp: DateTime<Utc>,
+    /// Link to the original frame that generated this log.
     pub source_frame_id: Ulid,
+    /// Human-readable summary of the screen content.
     pub description: String,
+    /// Name of the foreground application (if detectable).
     pub active_application: Option<String>,
+    /// High-level activity type (e.g., "Development", "Leisure").
     pub activity_category: Option<String>,
+    /// List of specific items or keywords identified.
     pub key_entities: Vec<String>,
+    /// Model certainty score from 0.0 to 1.0.
     pub confidence_score: f64,
+    /// Full, unparsed JSON output from the VLM for auditability.
     pub raw_vlm_response: String,
 }
 
@@ -43,7 +57,9 @@ pub struct SemanticLog {
 /// function. Rust uses the standard `Default` trait, allowing `CaptureConfig::default()`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CaptureConfig {
+    /// Seconds between consecutive screen captures.
     pub interval_seconds: u64,
+    /// Maximum number of frames to hold in the RAM ring buffer.
     pub ring_buffer_capacity: usize,
 }
 
@@ -59,8 +75,11 @@ impl Default for CaptureConfig {
 /// Configuration for the local VLM engine (Ollama).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct VlmConfig {
+    /// URL of the local Ollama API server.
     pub ollama_host: String,
+    /// Name of the vision model to use (e.g., "moondream").
     pub model_name: String,
+    /// Maximum wait time for model inference before failing.
     pub timeout_seconds: u64,
 }
 

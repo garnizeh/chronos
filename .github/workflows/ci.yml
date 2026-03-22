@@ -8,6 +8,9 @@ on:
   push:
     branches: [main]
   pull_request:
+ 
+permissions:
+  contents: read
 
 # Reason: Cancels in-progress CI runs when a new commit is pushed to the same PR.
 # This avoids wasting runner minutes on stale commits that the developer has already superseded.

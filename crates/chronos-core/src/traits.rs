@@ -1,3 +1,8 @@
+//! Behavioral contracts for the Chronos pipeline.
+//!
+//! This module defines the traits that decouple our core orchestration logic
+//! from specific implementations of hardware capture and AI inference.
+
 use crate::error::Result;
 use crate::models::{Frame, SemanticLog};
 use async_trait::async_trait;
@@ -19,6 +24,11 @@ pub trait ImageCapture: Send + Sync {
     /// Captures a single frame from the system's screen.
     /// Returns raw image bytes safely wrapped in our `Frame` domain model.
     async fn capture_frame(&self) -> Result<Frame>;
+
+    /// Returns the configured capture interval in seconds.
+    fn capture_interval_seconds(&self) -> u64 {
+        30
+    }
 }
 
 /// The vision-language model abstraction.
@@ -62,6 +72,8 @@ pub mod mocks {
                 height: 1,
             })
         }
+
+        // [JUSTIFIED GAP]: Default implementation used.
     }
 
     /// A test double that returns a hardcoded semantic log.

@@ -11,17 +11,27 @@ use ulid::Ulid;
 /// The Ollama vision-language model client.
 /// Uses `reqwest` to communicate with a local Ollama instance.
 pub struct OllamaVision {
+    /// Internal HTTP client for Ollama API calls.
     client: reqwest::Client,
+    /// Model-specific settings (host, model name, timeout).
     config: VlmConfig,
 }
 
+/// The internal data structure representing the VLM's JSON output.
+/// This matches the schema we request in the `SCREENSHOT_PROMPT`.
 #[derive(Deserialize, Debug)]
 struct VlmJsonResponse {
+    /// Concise summary of what is happening on screen.
     description: String,
+    /// Detected name of the focused window/app.
     active_application: Option<String>,
+    /// Activity classification for high-level sorting.
     activity_category: Option<String>,
+    /// Specific technologies, names, or topics identified.
     #[serde(default)]
     key_entities: Vec<String>,
+    /// The model's own estimation of its analysis accuracy (0.0 to 1.0).
+    #[serde(default)]
     confidence_score: f64,
 }
 
@@ -58,8 +68,12 @@ impl OllamaVision {
     }
 
     /// Internal helper to parse the VLM's response text.
-    /// If the response is valid JSON, it maps it to the expected fields.
-    /// If not, it falls back to using the entire text as a description with low confidence.
+    ///
+    /// **Why the fallback?**
+    /// VLMs (like Moondream) are probabilistic and might occasionally output raw
+    /// text instead of valid JSON, even when requested. Instead of failing the entire
+    /// pipeline, we treat raw text as a 'description' and assign a low confidence (0.3).
+    /// This keeps the system resilient to minor model hallucinations.
     fn parse_vlm_response(raw: &str) -> VlmJsonResponse {
         // Try to parse as JSON first
         if let Ok(mut json) = serde_json::from_str::<VlmJsonResponse>(raw) {
@@ -95,6 +109,8 @@ impl VisionInference for OllamaVision {
         });
 
         // 3. POST to Ollama
+        // We use the `/api/generate` endpoint because it allows us to send the image
+        // alongside the prompt in a single stateless request.
         let url = format!(
             "{}/api/generate",
             self.config.ollama_host.trim_end_matches('/')
@@ -250,6 +266,19 @@ mod tests {
         }"#;
         let parsed_low = OllamaVision::parse_vlm_response(raw_low);
         assert_eq!(parsed_low.confidence_score, 0.0);
+    }
+
+    #[test]
+    fn test_parse_vlm_json_missing_confidence() {
+        let raw = r#"{
+            "description": "Missing confidence score",
+            "active_application": "Firefox"
+        }"#;
+
+        let parsed = OllamaVision::parse_vlm_response(raw);
+        assert_eq!(parsed.description, "Missing confidence score");
+        assert_eq!(parsed.active_application, Some("Firefox".to_string()));
+        assert_eq!(parsed.confidence_score, 0.0); // Should default to 0.0
     }
 
     #[tokio::test]
