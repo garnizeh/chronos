@@ -31,6 +31,7 @@ struct VlmJsonResponse {
     #[serde(default)]
     key_entities: Vec<String>,
     /// The model's own estimation of its analysis accuracy (0.0 to 1.0).
+    #[serde(default)]
     confidence_score: f64,
 }
 
@@ -265,6 +266,19 @@ mod tests {
         }"#;
         let parsed_low = OllamaVision::parse_vlm_response(raw_low);
         assert_eq!(parsed_low.confidence_score, 0.0);
+    }
+
+    #[test]
+    fn test_parse_vlm_json_missing_confidence() {
+        let raw = r#"{
+            "description": "Missing confidence score",
+            "active_application": "Firefox"
+        }"#;
+
+        let parsed = OllamaVision::parse_vlm_response(raw);
+        assert_eq!(parsed.description, "Missing confidence score");
+        assert_eq!(parsed.active_application, Some("Firefox".to_string()));
+        assert_eq!(parsed.confidence_score, 0.0); // Should default to 0.0
     }
 
     #[tokio::test]

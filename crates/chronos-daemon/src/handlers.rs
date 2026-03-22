@@ -43,7 +43,7 @@ pub async fn handle_query(
         {
             to_dt = to_dt
                 .date_naive()
-                .and_hms_opt(23, 59, 59)
+                .and_hms_nano_opt(23, 59, 59, 999_999_999)
                 .and_then(|hms| Utc.from_local_datetime(&hms).single())
                 .unwrap_or(to_dt);
         }
@@ -234,13 +234,14 @@ mod tests {
         // Manual check of what handle_query would do
         let normalized = dt
             .date_naive()
-            .and_hms_opt(23, 59, 59)
+            .and_hms_nano_opt(23, 59, 59, 999_999_999)
             .and_then(|hms| Utc.from_local_datetime(&hms).single())
             .unwrap();
 
         assert_eq!(normalized.hour(), 23);
         assert_eq!(normalized.minute(), 59);
         assert_eq!(normalized.second(), 59);
+        assert_eq!(normalized.nanosecond(), 999_999_999);
     }
 
     #[tokio::test]
