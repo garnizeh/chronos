@@ -1,6 +1,6 @@
 {
-  "crates/chronos-core": "0.5.0",
-  "crates/chronos-capture": "0.4.1",
-  "crates/chronos-inference": "0.4.1",
-  "crates/chronos-daemon": "0.6.0"
+  "crates/chronos-core": "0.6.0",
+  "crates/chronos-capture": "0.5.0",
+  "crates/chronos-inference": "0.4.2",
+  "crates/chronos-daemon": "0.7.0"
 }

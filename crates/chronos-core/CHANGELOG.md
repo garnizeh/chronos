@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/garnizeh/chronos/compare/chronos-core-v0.5.0...chronos-core-v0.6.0) (2026-03-22)
+
+
+### Features
+
+* **chronos-capture:** improve x11 coverage and error handling ([4323cd3](https://github.com/garnizeh/chronos/commit/4323cd34c350acf6d078b893f445e05ffe7e7d10))
+
+
+### Bug Fixes
+
+* address multiple security, usability, and test findings ([574c61b](https://github.com/garnizeh/chronos/commit/574c61bf04daae2602c05946634a795adce390ca))
+
 ## [0.5.0](https://github.com/garnizeh/chronos/compare/chronos-core-v0.4.0...chronos-core-v0.5.0) (2026-03-21)
 
 

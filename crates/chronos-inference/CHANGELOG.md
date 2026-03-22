@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/garnizeh/chronos/compare/chronos-inference-v0.4.1...chronos-inference-v0.4.2) (2026-03-22)
+
+
+### Bug Fixes
+
+* improve inference resiliency and query normalization ([5f521c3](https://github.com/garnizeh/chronos/commit/5f521c33b9c44eca58c20e73727d21f423b8afaa))
+
 ## [0.4.1](https://github.com/garnizeh/chronos/compare/chronos-inference-v0.4.0...chronos-inference-v0.4.1) (2026-03-21)
 
 ## [0.4.0](https://github.com/garnizeh/chronos/compare/chronos-inference-v0.3.0...chronos-inference-v0.4.0) (2026-03-21)
