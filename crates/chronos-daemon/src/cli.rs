@@ -29,7 +29,7 @@ pub enum Commands {
         #[arg(long)]
         to: Option<String>,
 
-        /// Maximum number of results to returns
+        /// Maximum number of results to return
         #[arg(long, default_value = "10")]
         limit: i64,
     },

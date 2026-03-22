@@ -72,7 +72,7 @@ pub async fn handle_status(db: &Database, url: &str) -> anyhow::Result<()> {
     println!("Chronos System Status:");
     println!("  Database: {}", url);
     println!("  Total Semantic Logs: {}", count);
-    println!("  Capture Daemon: Running (v{})", env!("CARGO_PKG_VERSION"));
+    println!("  Version: v{}", env!("CARGO_PKG_VERSION"));
 
     Ok(())
 }
