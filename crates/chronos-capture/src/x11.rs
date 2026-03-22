@@ -187,7 +187,7 @@ impl X11Capture {
 
 #[async_trait]
 impl ImageCapture for X11Capture {
-    /// Captures a single frame synchronously on demand, but delegates to `spawn_blocking`
+    /// Captures a single frame asynchronously by delegating to `spawn_blocking`
     /// to avoid locking the Tokio executor during the X11 call.
     async fn capture_frame(&self) -> Result<Frame> {
         let source = self.source.clone();
@@ -203,6 +203,10 @@ impl ImageCapture for X11Capture {
                 e
             ))),
         }
+    }
+
+    fn capture_interval_seconds(&self) -> u64 {
+        self.config.interval_seconds
     }
 }
 
@@ -465,7 +469,7 @@ mod tests {
         let handle = capture.start_capture_loop(tx, shutdown_rx);
 
         // Wait a bit for the loop to run at least once
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        std::thread::sleep(std::time::Duration::from_millis(100));
 
         shutdown_tx.send(true).unwrap();
         handle.join().unwrap();

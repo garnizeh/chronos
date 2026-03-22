@@ -19,6 +19,9 @@ pub trait ImageCapture: Send + Sync {
     /// Captures a single frame from the system's screen.
     /// Returns raw image bytes safely wrapped in our `Frame` domain model.
     async fn capture_frame(&self) -> Result<Frame>;
+
+    /// Returns the configured capture interval in seconds.
+    fn capture_interval_seconds(&self) -> u64;
 }
 
 /// The vision-language model abstraction.
@@ -61,6 +64,10 @@ pub mod mocks {
                 width: 1,
                 height: 1,
             })
+        }
+
+        fn capture_interval_seconds(&self) -> u64 {
+            30
         }
     }
 

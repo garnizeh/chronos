@@ -87,8 +87,13 @@ where
 
     // Spawn capture thread
     let capture_handle = tokio::spawn(async move {
-        // Slow interval for production (30s)
-        let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
+        // We use the configured interval from the capture implementation.
+        // Note: We call capture.capture_frame() manually here instead of start_capture_loop()
+        // because we are already inside a managed async orchestrator and want to
+        // maintain direct control over the pipeline wiring.
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(
+            capture.capture_interval_seconds(),
+        ));
         loop {
             interval.tick().await;
             match capture.capture_frame().await {
@@ -190,6 +195,10 @@ mod tests {
         use chronos_core::traits::mocks::{MockCapture, MockVision};
 
         let db = Database::new_in_memory().await.unwrap();
+
+        // Pause time AFTER DB initialization to avoid connection pool timeouts
+        tokio::time::pause();
+
         let capture = MockCapture;
         let vision = MockVision;
 
@@ -199,8 +208,8 @@ mod tests {
             let _ = run_orchestrator::<MockVision, MockCapture>(vision, capture, db).await;
         });
 
-        // Give it a moment to process the initial mock frame
-        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        // Advance time to trigger the first capture tick immediately in virtual time
+        tokio::time::advance(std::time::Duration::from_millis(500)).await;
 
         handle.abort();
     }
@@ -219,6 +228,10 @@ mod tests {
                 Err(chronos_core::error::ChronosError::Capture(
                     "Mock failure".to_string(),
                 ))
+            }
+
+            fn capture_interval_seconds(&self) -> u64 {
+                30
             }
         }
 
