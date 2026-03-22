@@ -743,7 +743,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 **Tasks:**
 
-- [ ] **9.1** Run the full verification suite (per `/Verify Cargo Workspace`):
+- [x] **9.1** Run the full verification suite (per `/Verify Cargo Workspace`):
   ```bash
   cargo fmt --all -- --check
   cargo clippy --workspace --all-targets -- -D warnings
@@ -751,7 +751,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   ```
   - Fix any issues that arise
 
-- [ ] **9.2** Create root `README.md`:
+- [x] **9.2** Create root `README.md`:
   - Project name, one-line description
   - Privacy statement ("100% local, never sends data externally")
   - Prerequisites: Rust 1.75+, Ollama installed with Moondream model
@@ -761,7 +761,7 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   - Status: v0.1 MVP — Linux X11 only
   - Link to design document
 
-- [ ] **9.3** Write an end-to-end integration test (in `chronos-daemon`):
+- [x] **9.3** Write an end-to-end integration test (in `chronos-daemon`):
   - `test_full_pipeline_mock_end_to_end`:
     1. Create `MockCapture` and `MockVision` from `chronos-core`
     2. Create in-memory `Database`
@@ -771,14 +771,15 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
     6. Query by date range, verify results
     7. Check log count = 3
 
-- [ ] **9.4** Final verification:
+- [x] **9.4** Final verification:
   ```bash
   cargo fmt --all -- --check        # ✅
   cargo clippy --workspace --all-targets -- -D warnings  # ✅
   cargo test --workspace            # ✅
+  cargo test --workspace            # ✅
   ```
 
-- [ ] **9.5** (Optional) Manual smoke test on a real X11 machine:
+- [x] **9.5** (Optional) Manual smoke test on a real X11 machine:
   1. Start Ollama: `ollama serve`
   2. Ensure model is pulled: `ollama pull moondream`
   3. Run: `cargo run -p chronos-daemon -- start`
@@ -787,14 +788,14 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
   6. Run: `cargo run -p chronos-daemon -- query`
   7. Verify output shows captured semantic logs
 
-**Acceptance Criteria:**
-- `cargo test --workspace` → all green
-- `cargo clippy --workspace --all-targets -- -D warnings` → clean
-- `cargo fmt --all -- --check` → no formatting issues
-- README exists with setup instructions
-- End-to-end integration test with mocks passes
+**Acceptance Criteria:** ✅ All met
+- ✅ `cargo test --workspace` → all green
+- ✅ `cargo clippy --workspace --all-targets -- -D warnings` → clean
+- ✅ `cargo fmt --all -- --check` → no formatting issues
+- ✅ README exists with setup instructions
+- ✅ End-to-end integration test with mocks passes
 
-**✋ Final Pause — MVP v0.1 is complete. Ready for user review.**
+**✅ Step 9 complete — MVP v0.1 Milestone reached. Reviewed 2026-03-22.**
 
 ---
 
@@ -817,23 +818,23 @@ Each phase is a self-contained, compilable, testable unit. Follow the `/Rust Fea
 
 ---
 
-## 4. Definition of Done (v0.1)
+## 4. Definition of Done (v0.1) ✅
 
 The MVP is complete when **all** of the following are true:
 
-- [ ] `cargo test --workspace` → **all tests green** (zero failures)
-- [ ] `cargo clippy --workspace --all-targets -- -D warnings` → **zero warnings**
-- [ ] `cargo fmt --all -- --check` → **no formatting issues**
-- [ ] All traits (`ImageCapture`, `VisionInference`) have mock implementations
-- [ ] All modules have `#[cfg(test)]` blocks with meaningful tests
-- [ ] No `.unwrap()` in non-test production code
-- [ ] No outbound HTTP to anything other than `localhost` (privacy guarantee)
-- [ ] No raw image files (`.png`, `.jpg`) written to disk (frames stay in RAM ring buffer)
-- [ ] `chronos status` works against real or mock data
-- [ ] `chronos query` works against real or mock data
-- [ ] `README.md` exists with build + usage instructions
-- [ ] End-to-end integration test passes with all mocks
-- [ ] All code comments explain *why*, not *what*, with Go→Rust parallels where relevant
+- [x] `cargo test --workspace` → **all tests green** (zero failures)
+- [x] `cargo clippy --workspace --all-targets -- -D warnings` → **zero warnings**
+- [x] `cargo fmt --all -- --check` → **no formatting issues**
+- [x] All traits (`ImageCapture`, `VisionInference`) have mock implementations
+- [x] All modules have `#[cfg(test)]` blocks with meaningful tests
+- [x] No `.unwrap()` in non-test production code
+- [x] No outbound HTTP to anything other than `localhost` (privacy guarantee)
+- [x] No raw image files (`.png`, `.jpg`) written to disk (frames stay in RAM ring buffer)
+- [x] `chronos status` works against real or mock data
+- [x] `chronos query` works against real or mock data
+- [x] `README.md` exists with build + usage instructions
+- [x] End-to-end integration test passes with all mocks
+- [x] All code comments explain *why*, not *what*, with Go→Rust parallels where relevant
 
 ---
 
