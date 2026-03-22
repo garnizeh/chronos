@@ -7,7 +7,7 @@ use thiserror::Error;
 /// crate provides a declarative macro (`#[derive(Error)]`) to automatically implement
 /// the `std::error::Error` and `std::fmt::Display` traits.
 /// This allows the caller to exhaustively match on specific error variants.
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Clone)]
 pub enum ChronosError {
     #[error("Capture failed: {0}")]
     Capture(String),
